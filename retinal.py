@@ -71,6 +71,9 @@ class Ui_dialog(object):
         self.listWidget.setObjectName("listWidget")
         self.gridLayout.addWidget(
             self.listWidget, 1, 1, 2, 1, QtCore.Qt.AlignHCenter)
+
+        self.listWidget.itemClicked.connect(self.showImage)
+
         self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
 
         self.retranslateUi(dialog)
@@ -88,8 +91,8 @@ class Ui_dialog(object):
     def chooseFolder(self):
         self.dir = QtWidgets.QFileDialog.getExistingDirectory(
             None, 'Select a folder:', 'C:\\', QtWidgets.QFileDialog.ShowDirsOnly)
-
-        self.readFolder(self.dir)
+        if self.dir != '':
+            self.readFolder(self.dir)
 
     def readFolder(self, folder):
         self.images = []
@@ -105,6 +108,10 @@ class Ui_dialog(object):
         self.listWidget.clear()
         self.listWidget.addItems(images)
         print(images)
+
+    def showImage(self):
+        print(self.listWidget.currentItem().text())
+        pass
 
 
 def isAnImage(fileName):
