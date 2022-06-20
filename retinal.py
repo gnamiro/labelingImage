@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
-
-# Form implementation generated from reading ui file 'retinal.ui'
-#
-# Created by: PyQt5 UI code generator 5.9.2
-#
-# WARNING! All changes made in this file will be lost!
-
 from PyQt5 import QtCore, QtGui, QtWidgets
+import os
+# TODO: 1. import logging
 
 
 class Ui_dialog(object):
     def __init__(self) -> None:
         self.dir = None
+        self.images = []
 
     def setupUi(self, dialog):
         dialog.setObjectName("dialog")
@@ -93,7 +89,29 @@ class Ui_dialog(object):
         self.dir = QtWidgets.QFileDialog.getExistingDirectory(
             None, 'Select a folder:', 'C:\\', QtWidgets.QFileDialog.ShowDirsOnly)
 
-        print(self.dir)
+        self.readFolder(self.dir)
+
+    def readFolder(self, folder):
+        self.images = []
+        files = os.listdir(folder)
+        # TODO: 2. this method don't recursively search in whole directories inside chosen directory.
+        for file in files:
+            if isAnImage(file):
+                self.images.append(file)
+
+        self.importInsideListWidget(self.images)
+
+    def importInsideListWidget(self, images):
+        self.listWidget.clear()
+        self.listWidget.addItems(images)
+        print(images)
+
+
+def isAnImage(fileName):
+    if fileName.endswith('.png') or fileName.endswith('.jpg') or fileName.endswith('.jpeg'):
+        return True
+
+    return False
 
 
 if __name__ == "__main__":

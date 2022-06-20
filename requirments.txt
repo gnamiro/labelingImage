@@ -1,0 +1,3 @@
+PyQt5
+pyqt-tools
+PyQt5Designer
