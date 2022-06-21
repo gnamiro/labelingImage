@@ -25,8 +25,6 @@ class Ui_dialog(object):
         self.pushButton_3.setObjectName("pushButton_3")
         self.gridLayout.addWidget(self.pushButton_3, 0, 0, 1, 1)
 
-        self.pushButton_3.clicked.connect(self.chooseFolder)
-
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
         self.verticalLayout_2.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         self.verticalLayout_2.setSpacing(18)
@@ -116,8 +114,6 @@ class Ui_dialog(object):
         self.label.setStyleSheet("font-weight: 500")
         self.label.setObjectName("label")
 
-        self.listWidget.itemClicked.connect(self.showImage)
-
         self.gridLayout.addWidget(self.label, 0, 2, 1, 1, QtCore.Qt.AlignRight)
 
         self.retranslateUi(dialog)
@@ -132,6 +128,20 @@ class Ui_dialog(object):
         self.pushButton.setText(_translate("dialog", "لغو"))
         self.label.setText(_translate(
             "dialog", "برنامه تعیین ناهنجاری در عکس‌های مربوط به چشم"))
+
+
+class RetinalApplication(QtWidgets.QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.dir = None
+        self.images = []
+
+        self.ui = Ui_dialog()
+        self.ui.setupUi(self)
+
+        self.ui.pushButton_3.clicked.connect(self.chooseFolder)
+        self.ui.listWidget.itemClicked.connect(self.showImage)
 
     def chooseFolder(self):
         self.dir = QtWidgets.QFileDialog.getExistingDirectory(
@@ -150,12 +160,22 @@ class Ui_dialog(object):
         self.importInsideListWidget(self.images)
 
     def importInsideListWidget(self, images):
-        self.listWidget.clear()
-        self.listWidget.addItems(images)
+        self.ui.listWidget.clear()
+        self.ui.listWidget.addItems(images)
         print(images)
 
     def showImage(self):
-        print(self.listWidget.currentItem().text())
+        print(self.ui.listWidget.currentItem().text())
+        imagePath = self.dir + '/' + self.ui.listWidget.currentItem().text()
+        if(os.path.isfile(imagePath)):
+            scene = QtWidgets.QGraphicsScene(self)
+            pixmap = QtGui.QPixmap(imagePath)
+            item = QtWidgets.QGraphicsPixmapItem(pixmap)
+            scene.addItem(item)
+
+            self.ui.graphicsView.setScene(scene)
+        else:
+            print(imagePath)
         pass
 
 
@@ -169,8 +189,10 @@ def isAnImage(fileName):
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    dialog = QtWidgets.QDialog()
-    ui = Ui_dialog()
-    ui.setupUi(dialog)
-    dialog.show()
+    retianl = RetinalApplication()
+    retianl.show()
+    # dialog = QtWidgets.QDialog()
+    # ui = Ui_dialog()
+    # ui.setupUi(dialog)
+    # dialog.show()
     sys.exit(app.exec_())
