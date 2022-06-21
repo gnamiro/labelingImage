@@ -1,12 +1,13 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import os
+from retinal import PhotoViewer
 # TODO: 1. import logging
 
 
 class Ui_dialog(object):
     def setupUi(self, dialog):
         dialog.setObjectName("dialog")
-        dialog.resize(1001, 787)
+        dialog.resize(1035, 786)
         self.gridLayout = QtWidgets.QGridLayout(dialog)
         self.gridLayout.setObjectName("gridLayout")
         self.pushButton_3 = QtWidgets.QPushButton(dialog)
@@ -16,7 +17,6 @@ class Ui_dialog(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
             self.pushButton_3.sizePolicy().hasHeightForWidth())
-
         self.pushButton_3.setSizePolicy(sizePolicy)
         self.pushButton_3.setMinimumSize(QtCore.QSize(150, 35))
         self.pushButton_3.setMaximumSize(QtCore.QSize(150, 39))
@@ -24,19 +24,16 @@ class Ui_dialog(object):
         self.pushButton_3.setStyleSheet("")
         self.pushButton_3.setObjectName("pushButton_3")
         self.gridLayout.addWidget(self.pushButton_3, 0, 0, 1, 1)
-
         self.verticalLayout_2 = QtWidgets.QVBoxLayout()
         self.verticalLayout_2.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         self.verticalLayout_2.setSpacing(18)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-
         self.label_2 = QtWidgets.QLabel(dialog)
         self.label_2.setMaximumSize(QtCore.QSize(100, 20))
         self.label_2.setStyleSheet("font-weight: 599")
         self.label_2.setObjectName("label_2")
         self.verticalLayout_2.addWidget(
             self.label_2, 0, QtCore.Qt.AlignRight | QtCore.Qt.AlignTop)
-
         self.listWidget = QtWidgets.QListWidget(dialog)
         self.listWidget.setEnabled(True)
         sizePolicy = QtWidgets.QSizePolicy(
@@ -53,9 +50,19 @@ class Ui_dialog(object):
         self.listWidget.setObjectName("listWidget")
         self.verticalLayout_2.addWidget(
             self.listWidget, 0, QtCore.Qt.AlignHCenter)
-
-        self.gridLayout.addLayout(self.verticalLayout_2, 2, 2, 3, 1)
-        self.graphicsView = QtWidgets.QGraphicsView(dialog)
+        self.gridLayout.addLayout(self.verticalLayout_2, 2, 3, 3, 1)
+        self.label = QtWidgets.QLabel(dialog)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(
+            self.label.sizePolicy().hasHeightForWidth())
+        self.label.setSizePolicy(sizePolicy)
+        self.label.setStyleSheet("font-weight: 500")
+        self.label.setObjectName("label")
+        self.gridLayout.addWidget(self.label, 0, 3, 1, 1, QtCore.Qt.AlignRight)
+        self.graphicsView = PhotoViewer(dialog)
         sizePolicy = QtWidgets.QSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(17)
@@ -68,7 +75,7 @@ class Ui_dialog(object):
         self.graphicsView.viewport().setProperty(
             "cursor", QtGui.QCursor(QtCore.Qt.CrossCursor))
         self.graphicsView.setObjectName("graphicsView")
-        self.gridLayout.addWidget(self.graphicsView, 2, 0, 4, 2)
+        self.gridLayout.addWidget(self.graphicsView, 2, 0, 4, 3)
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setSizeConstraint(
             QtWidgets.QLayout.SetFixedSize)
@@ -79,7 +86,6 @@ class Ui_dialog(object):
             QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-
         sizePolicy.setHeightForWidth(
             self.pushButton_2.sizePolicy().hasHeightForWidth())
         self.pushButton_2.setSizePolicy(sizePolicy)
@@ -88,7 +94,6 @@ class Ui_dialog(object):
         self.pushButton_2.setObjectName("pushButton_2")
         self.horizontalLayout_3.addWidget(
             self.pushButton_2, 0, QtCore.Qt.AlignRight | QtCore.Qt.AlignBottom)
-
         self.pushButton = QtWidgets.QPushButton(dialog)
         sizePolicy = QtWidgets.QSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -101,20 +106,12 @@ class Ui_dialog(object):
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout_3.addWidget(
             self.pushButton, 0, QtCore.Qt.AlignBottom)
-
-        self.gridLayout.addLayout(self.horizontalLayout_3, 5, 2, 1, 1)
-        self.label = QtWidgets.QLabel(dialog)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.label.sizePolicy().hasHeightForWidth())
-        self.label.setSizePolicy(sizePolicy)
-        self.label.setStyleSheet("font-weight: 500")
-        self.label.setObjectName("label")
-
-        self.gridLayout.addWidget(self.label, 0, 2, 1, 1, QtCore.Qt.AlignRight)
+        self.gridLayout.addLayout(self.horizontalLayout_3, 5, 3, 1, 1)
+        self.pushButton_4 = QtWidgets.QPushButton(dialog)
+        self.pushButton_4.setMinimumSize(QtCore.QSize(150, 35))
+        self.pushButton_4.setMaximumSize(QtCore.QSize(150, 35))
+        self.pushButton_4.setObjectName("pushButton_4")
+        self.gridLayout.addWidget(self.pushButton_4, 0, 1, 1, 1)
 
         self.retranslateUi(dialog)
         QtCore.QMetaObject.connectSlotsByName(dialog)
@@ -128,6 +125,7 @@ class Ui_dialog(object):
         self.pushButton.setText(_translate("dialog", "لغو"))
         self.label.setText(_translate(
             "dialog", "برنامه تعیین ناهنجاری در عکس‌های مربوط به چشم"))
+        self.pushButton_4.setText(_translate("dialog", "DragToggleMode"))
 
 
 class RetinalApplication(QtWidgets.QDialog):
@@ -142,6 +140,10 @@ class RetinalApplication(QtWidgets.QDialog):
 
         self.ui.pushButton_3.clicked.connect(self.chooseFolder)
         self.ui.listWidget.itemClicked.connect(self.showImage)
+        self.ui.pushButton_4.clicked.connect(self.dragToggle)
+
+    def dragToggle(self):
+        self.ui.graphicsView.toggleDragMode()
 
     def chooseFolder(self):
         self.dir = QtWidgets.QFileDialog.getExistingDirectory(
@@ -168,12 +170,16 @@ class RetinalApplication(QtWidgets.QDialog):
         print(self.ui.listWidget.currentItem().text())
         imagePath = self.dir + '/' + self.ui.listWidget.currentItem().text()
         if(os.path.isfile(imagePath)):
-            scene = QtWidgets.QGraphicsScene(self)
+            # scene = QtWidgets.QGraphicsScene(self)
             pixmap = QtGui.QPixmap(imagePath)
-            item = QtWidgets.QGraphicsPixmapItem(pixmap)
-            scene.addItem(item)
+            width = self.ui.graphicsView.size().width()
+            height = self.ui.graphicsView.size().height()
+            pixmapRescaled = pixmap.scaled(
+                width, height, QtCore.Qt.KeepAspectRatio)
+            # item = QtWidgets.QGraphicsPixmapItem(pixmapRescaled)
+            # scene.addItem(item)
 
-            self.ui.graphicsView.setScene(scene)
+            self.ui.graphicsView.setPhoto(pixmap)
         else:
             print(imagePath)
         pass

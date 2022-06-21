@@ -1,131 +1,121 @@
-# -*- coding: utf-8 -*-
 from PyQt5 import QtCore, QtGui, QtWidgets
-import os
-# TODO: 1. import logging
 
 
-class Ui_dialog(object):
-    def __init__(self) -> None:
-        self.dir = None
-        self.images = []
+class PhotoViewer(QtWidgets.QGraphicsView):
+    photoClicked = QtCore.pyqtSignal(QtCore.QPoint)
 
-    def setupUi(self, dialog):
-        dialog.setObjectName("dialog")
-        dialog.resize(762, 685)
-        self.gridLayout_2 = QtWidgets.QGridLayout(dialog)
-        self.gridLayout_2.setObjectName("gridLayout_2")
-        self.gridLayout = QtWidgets.QGridLayout()
-        self.gridLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
-        self.gridLayout.setObjectName("gridLayout")
-        self.graphicsView = QtWidgets.QGraphicsView(dialog)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Maximum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.graphicsView.sizePolicy().hasHeightForWidth())
-        self.graphicsView.setSizePolicy(sizePolicy)
-        self.graphicsView.setMaximumSize(QtCore.QSize(16777215, 160000))
-        self.graphicsView.setObjectName("graphicsView")
-        self.gridLayout.addWidget(self.graphicsView, 1, 0, 3, 1)
-        self.label = QtWidgets.QLabel(dialog)
-        self.label.setObjectName("label")
-        self.gridLayout.addWidget(self.label, 0, 1, 1, 1)
-        self.pushButton_3 = QtWidgets.QPushButton(dialog)
-        sizePolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.pushButton_3.sizePolicy().hasHeightForWidth())
+    def __init__(self, parent):
+        super(PhotoViewer, self).__init__(parent)
+        self._zoom = 0
+        self._empty = True
+        self._scene = QtWidgets.QGraphicsScene(self)
+        self._photo = QtWidgets.QGraphicsPixmapItem()
+        self._scene.addItem(self._photo)
+        self.setScene(self._scene)
+        self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
+        self.setResizeAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(30, 30, 30)))
+        self.setFrameShape(QtWidgets.QFrame.NoFrame)
 
-        self.pushButton_3.setSizePolicy(sizePolicy)
-        self.pushButton_3.setMinimumSize(QtCore.QSize(150, 35))
-        self.pushButton_3.setMaximumSize(QtCore.QSize(150, 39))
-        self.pushButton_3.setBaseSize(QtCore.QSize(150, 35))
-        self.pushButton_3.setStyleSheet("")
-        self.pushButton_3.setObjectName("pushButton_3")
-        self.gridLayout.addWidget(self.pushButton_3, 0, 0, 1, 1)
+    def hasPhoto(self):
+        return not self._empty
 
-        self.pushButton_3.clicked.connect(self.chooseFolder)
+    def fitInView(self, scale=True):
+        rect = QtCore.QRectF(self._photo.pixmap().rect())
+        if not rect.isNull():
+            self.setSceneRect(rect)
+            if self.hasPhoto():
+                unity = self.transform().mapRect(QtCore.QRectF(0, 0, 1, 1))
+                self.scale(1 / unity.width(), 1 / unity.height())
+                viewrect = self.viewport().rect()
+                scenerect = self.transform().mapRect(rect)
+                factor = min(viewrect.width() / scenerect.width(),
+                             viewrect.height() / scenerect.height())
+                self.scale(factor, factor)
+            self._zoom = 0
 
-        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_3.setSpacing(2)
-        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+    def setPhoto(self, pixmap=None):
+        self._zoom = 0
+        if pixmap and not pixmap.isNull():
+            self._empty = False
+            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
+            self._photo.setPixmap(pixmap)
+        else:
+            self._empty = True
+            self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
+            self._photo.setPixmap(QtGui.QPixmap())
+        self.fitInView()
 
-        self.pushButton_2 = QtWidgets.QPushButton(dialog)
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.horizontalLayout_3.addWidget(
-            self.pushButton_2, 0, QtCore.Qt.AlignBottom)
+    def wheelEvent(self, event):
+        if self.hasPhoto():
+            if event.angleDelta().y() > 0:
+                factor = 1.25
+                self._zoom += 1
+            else:
+                factor = 0.8
+                self._zoom -= 1
+            if self._zoom > 0:
+                self.scale(factor, factor)
+            elif self._zoom == 0:
+                self.fitInView()
+            else:
+                self._zoom = 0
 
-        self.pushButton = QtWidgets.QPushButton(dialog)
-        self.pushButton.setObjectName("pushButton")
-        self.horizontalLayout_3.addWidget(
-            self.pushButton, 0, QtCore.Qt.AlignBottom)
+    def toggleDragMode(self):
+        if self.dragMode() == QtWidgets.QGraphicsView.ScrollHandDrag:
+            self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
+        elif not self._photo.pixmap().isNull():
+            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
 
-        self.gridLayout.addLayout(self.horizontalLayout_3, 3, 1, 1, 1)
-
-        self.listWidget = QtWidgets.QListWidget(dialog)
-        self.listWidget.setMinimumSize(QtCore.QSize(200, 350))
-        self.listWidget.setMaximumSize(QtCore.QSize(200, 387))
-        self.listWidget.setObjectName("listWidget")
-        self.gridLayout.addWidget(
-            self.listWidget, 1, 1, 2, 1, QtCore.Qt.AlignHCenter)
-
-        self.listWidget.itemClicked.connect(self.showImage)
-
-        self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
-
-        self.retranslateUi(dialog)
-        QtCore.QMetaObject.connectSlotsByName(dialog)
-
-    def retranslateUi(self, dialog):
-        _translate = QtCore.QCoreApplication.translate
-        dialog.setWindowTitle(_translate("dialog", "Dialog"))
-        self.label.setText(_translate(
-            "dialog", "برنامه تعیین ناهنجاری در عکس‌های مربوط به چشم"))
-        self.pushButton_3.setText(_translate("dialog", "انتخاب پوشه عکس‌ها"))
-        self.pushButton_2.setText(_translate("dialog", "ذخیره"))
-        self.pushButton.setText(_translate("dialog", "لغو"))
-
-    def chooseFolder(self):
-        self.dir = QtWidgets.QFileDialog.getExistingDirectory(
-            None, 'Select a folder:', 'C:\\', QtWidgets.QFileDialog.ShowDirsOnly)
-        if self.dir != '':
-            self.readFolder(self.dir)
-
-    def readFolder(self, folder):
-        self.images = []
-        files = os.listdir(folder)
-        # TODO: 2. this method don't recursively search in whole directories inside chosen directory.
-        for file in files:
-            if isAnImage(file):
-                self.images.append(file)
-
-        self.importInsideListWidget(self.images)
-
-    def importInsideListWidget(self, images):
-        self.listWidget.clear()
-        self.listWidget.addItems(images)
-        print(images)
-
-    def showImage(self):
-        print(self.listWidget.currentItem().text())
-        pass
+    def mousePressEvent(self, event):
+        if self._photo.isUnderMouse():
+            self.photoClicked.emit(self.mapToScene(event.pos()).toPoint())
+        super(PhotoViewer, self).mousePressEvent(event)
 
 
-def isAnImage(fileName):
-    if fileName.endswith('.png') or fileName.endswith('.jpg') or fileName.endswith('.jpeg'):
-        return True
+# TEST zoom and panning
+class Window(QtWidgets.QWidget):
+    def __init__(self):
+        super(Window, self).__init__()
+        self.viewer = PhotoViewer(self)
+        # 'Load image' button
+        self.btnLoad = QtWidgets.QToolButton(self)
+        self.btnLoad.setText('Load image')
+        self.btnLoad.clicked.connect(self.loadImage)
+        # Button to change from drag/pan to getting pixel info
+        self.btnPixInfo = QtWidgets.QToolButton(self)
+        self.btnPixInfo.setText('Enter pixel info mode')
+        self.btnPixInfo.clicked.connect(self.pixInfo)
+        self.editPixInfo = QtWidgets.QLineEdit(self)
+        self.editPixInfo.setReadOnly(True)
+        self.viewer.photoClicked.connect(self.photoClicked)
+        # Arrange layout
+        VBlayout = QtWidgets.QVBoxLayout(self)
+        VBlayout.addWidget(self.viewer)
+        HBlayout = QtWidgets.QHBoxLayout()
+        HBlayout.setAlignment(QtCore.Qt.AlignLeft)
+        HBlayout.addWidget(self.btnLoad)
+        HBlayout.addWidget(self.btnPixInfo)
+        HBlayout.addWidget(self.editPixInfo)
+        VBlayout.addLayout(HBlayout)
 
-    return False
+    def loadImage(self):
+        self.viewer.setPhoto(QtGui.QPixmap('image.jpg'))
+
+    def pixInfo(self):
+        self.viewer.toggleDragMode()
+
+    def photoClicked(self, pos):
+        if self.viewer.dragMode() == QtWidgets.QGraphicsView.NoDrag:
+            self.editPixInfo.setText('%d, %d' % (pos.x(), pos.y()))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    dialog = QtWidgets.QDialog()
-    ui = Ui_dialog()
-    ui.setupUi(dialog)
-    dialog.show()
+    window = Window()
+    window.setGeometry(500, 300, 800, 600)
+    window.show()
     sys.exit(app.exec_())
