@@ -6,15 +6,59 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1035</width>
-    <height>786</height>
+    <width>1020</width>
+    <height>747</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="2" column="0" rowspan="4" colspan="3">
+    <widget class="QGraphicsView" name="graphicsView">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>17</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>589</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>160000</height>
+      </size>
+     </property>
+     <property name="cursor" stdset="0">
+      <cursorShape>CrossCursor</cursorShape>
+     </property>
+     <property name="dragMode">
+      <enum>QGraphicsView::NoDrag</enum>
+     </property>
+    </widget>
+   </item>
    <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">font-weight: 500</string>
+     </property>
+     <property name="text">
+      <string>Retinal Lesion Annotator</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3" alignment="Qt::AlignRight">
     <widget class="QPushButton" name="pushButton_3">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -44,7 +88,7 @@
       <string notr="true"/>
      </property>
      <property name="text">
-      <string>انتخاب پوشه عکس‌ها</string>
+      <string>select folder</string>
      </property>
     </widget>
    </item>
@@ -56,7 +100,7 @@
      <property name="sizeConstraint">
       <enum>QLayout::SetFixedSize</enum>
      </property>
-     <item alignment="Qt::AlignRight|Qt::AlignTop">
+     <item alignment="Qt::AlignLeft|Qt::AlignTop">
       <widget class="QLabel" name="label_2">
        <property name="maximumSize">
         <size>
@@ -68,7 +112,7 @@
         <string notr="true">font-weight: 599</string>
        </property>
        <property name="text">
-        <string>پوشه عکس‌ها</string>
+        <string>Folder content:</string>
        </property>
       </widget>
      </item>
@@ -101,47 +145,6 @@
       </widget>
      </item>
     </layout>
-   </item>
-   <item row="0" column="3" alignment="Qt::AlignRight">
-    <widget class="QLabel" name="label">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">font-weight: 500</string>
-     </property>
-     <property name="text">
-      <string>برنامه تعیین ناهنجاری در عکس‌های مربوط به چشم</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0" rowspan="4" colspan="3">
-    <widget class="QGraphicsView" name="graphicsView">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-       <horstretch>17</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>589</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>160000</height>
-      </size>
-     </property>
-     <property name="cursor" stdset="0">
-      <cursorShape>CrossCursor</cursorShape>
-     </property>
-    </widget>
    </item>
    <item row="5" column="3">
     <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -198,21 +201,9 @@
     </layout>
    </item>
    <item row="0" column="1">
-    <widget class="QPushButton" name="pushButton_4">
-     <property name="minimumSize">
-      <size>
-       <width>150</width>
-       <height>35</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>150</width>
-       <height>35</height>
-      </size>
-     </property>
+    <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>DragToggleMode</string>
+      <string>TextLabel</string>
      </property>
     </widget>
    </item>

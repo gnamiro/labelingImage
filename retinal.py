@@ -72,6 +72,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
     def mousePressEvent(self, event):
         if self._photo.isUnderMouse():
             self.photoClicked.emit(self.mapToScene(event.pos()).toPoint())
+            # painter = QPainter
         super(PhotoViewer, self).mousePressEvent(event)
 
 
