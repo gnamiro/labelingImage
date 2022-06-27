@@ -24,12 +24,15 @@ class RetinalApplication(QtWidgets.QDialog):
 
         self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
 
+        self.dialog = CategoryApplication()
+
         # signal connections
         self.ui.pushButton_3.clicked.connect(self.chooseFolder)
         self.ui.listWidget.itemClicked.connect(self.showImage)
         self.ui.graphicsView.photoClicked.connect(self.photoClicked)
         self.ui.graphicsView.photoReleased.connect(self.photoReleased)
         self.ui.graphicsView.photoMoved.connect(self.photoMoved)
+        self.dialog.dialogStatus.connect(self.handleDialogInfo)
 
     def paintEvent(self, event):
         super(RetinalApplication, self).paintEvent(event)
@@ -122,23 +125,26 @@ class RetinalApplication(QtWidgets.QDialog):
             # self.update()
             self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
 
-    def openCategoryDialog(self, beginCord, destinCord):
-        dialog = CategoryApplication(
-            beginCord, destinCord, self.ui.listWidget.currentItem().text())
-        dialog.exec_()
+    def openCategoryDialog(self, beginCord, destCord):
+        self.dialog.set_cords(beginCord, destCord,
+                              self.ui.listWidget.currentItem().text())
+        self.dialog.exec_()
 
-        print('after dialog')
+    def handleDialogInfo(self, status, beginPos, destPos):
+        if status:
+            print('save data')
+        else:
+            print('remove data')
 
 
 class CategoryApplication(QtWidgets.QDialog):
-    def __init__(self, beginCord, destCord, imageName):
+    dialogStatus = QtCore.pyqtSignal(int, QtCore.QPoint, QtCore.QPoint)
+
+    def __init__(self):
         super().__init__()
 
         self.ui = Category_Dialog()
         self.ui.setupUi(self)
-
-        self.imageName = imageName
-        self.cords = (beginCord, destCord)
 
         self.model = QtGui.QStandardItemModel(self)
         self.ui.listView.setModel(self.model)
@@ -147,8 +153,13 @@ class CategoryApplication(QtWidgets.QDialog):
 
         # signal connections
         self.ui.pushButton_3.clicked.connect(self.addNewCategory)
-        self.ui.pushButton.clicked.connect(self.saveImageCategory)
+        self.ui.pushButton.clicked.connect(self.saveInfo)
+        self.ui.pushButton_2.clicked.connect(self.deleteInfo)
         self.model.itemChanged.connect(self.onCategorySelection)
+
+    def set_cords(self, beginCord, destCord, imageName):
+        self.imageName = imageName
+        self.cords = (beginCord, destCord)
 
     def addNewCategory(self):
         newCategory = self.ui.lineEdit.text()
@@ -179,8 +190,20 @@ class CategoryApplication(QtWidgets.QDialog):
             if item.text() in self.info:
                 self.info.remove(item.text())
 
-    def saveImageCategory(self):
+    def saveInfo(self):
         pass
+
+    def deleteInfo(self):
+        self.info = []
+        self.uncheckItems()
+        self.dialogStatus.emit(0, self.cords[0], self.cords[1])
+        self.close()
+
+    def uncheckItems(self):
+        for index in range(self.model.rowCount()):
+            item = self.model.item(index)
+            if item.isCheckable():
+                item.setCheckState(QtCore.Qt.Unchecked)
 
 
 def isAnImage(fileName):
