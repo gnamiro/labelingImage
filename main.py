@@ -32,7 +32,8 @@ class RetinalApplication(QtWidgets.QDialog):
         self.ui.graphicsView.photoClicked.connect(self.photoClicked)
         self.ui.graphicsView.photoReleased.connect(self.photoReleased)
         self.ui.graphicsView.photoMoved.connect(self.photoMoved)
-        self.dialog.dialogStatus.connect(self.handleDialogInfo)
+        self.dialog.dialogStatus.connect(self.deleteDialogRect)
+        self.dialog.sendMessage.connect(self.handleDialogInfo)
 
     def paintEvent(self, event):
         super(RetinalApplication, self).paintEvent(event)
@@ -130,15 +131,17 @@ class RetinalApplication(QtWidgets.QDialog):
                               self.ui.listWidget.currentItem().text())
         self.dialog.exec_()
 
-    def handleDialogInfo(self, status, beginPos, destPos):
-        if status:
-            print('save data')
-        else:
-            print('remove data')
+    def deleteDialogRect(self, beginPos, destPos):
+        print('remove data')  # After selecting bbox
+
+    def handleDialogInfo(self, info):
+        infoList = info.split(',')
+        print(infoList)
 
 
 class CategoryApplication(QtWidgets.QDialog):
-    dialogStatus = QtCore.pyqtSignal(int, QtCore.QPoint, QtCore.QPoint)
+    dialogStatus = QtCore.pyqtSignal(QtCore.QPoint, QtCore.QPoint)
+    sendMessage = QtCore.pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -166,6 +169,7 @@ class CategoryApplication(QtWidgets.QDialog):
         # print(newCategory)
         item = self.createCategoryItem(newCategory)
         self.model.appendRow(item)
+        self.ui.lineEdit.setText('')
 
     def createCategoryItem(self, categoryName):
         item = QtGui.QStandardItem(categoryName)
@@ -191,12 +195,15 @@ class CategoryApplication(QtWidgets.QDialog):
                 self.info.remove(item.text())
 
     def saveInfo(self):
-        pass
+        infoMessage = ','.join(str(e) for e in self.info)
+        self.uncheckItems()
+        self.sendMessage.emit(infoMessage)
+        self.close()
 
     def deleteInfo(self):
         self.info = []
         self.uncheckItems()
-        self.dialogStatus.emit(0, self.cords[0], self.cords[1])
+        self.dialogStatus.emit(self.cords[0], self.cords[1])
         self.close()
 
     def uncheckItems(self):

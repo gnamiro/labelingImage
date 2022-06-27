@@ -29,6 +29,7 @@ class Category_Dialog(object):
         self.formLayout.setObjectName("formLayout")
         self.lineEdit = QtWidgets.QLineEdit(Dialog)
         self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setPlaceholderText('Category name ...')
         self.formLayout.setWidget(
             1, QtWidgets.QFormLayout.FieldRole, self.lineEdit)
         self.pushButton_3 = QtWidgets.QPushButton(Dialog)
