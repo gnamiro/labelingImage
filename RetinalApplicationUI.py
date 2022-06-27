@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'categoryDialog.ui'
+# Form implementation generated from reading ui file 'retinal.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PhotoViewer import PhotoViewer
+from photoViewer import PhotoViewer
 import pathlib
 current_directory = str(pathlib.Path(__file__).parent.absolute())
 

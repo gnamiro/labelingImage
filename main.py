@@ -1,7 +1,8 @@
 from cmath import rect
 from PyQt5 import QtCore, QtGui, QtWidgets
 import os
-from RetinalApplicationUI import Ui_Dialog
+from retinalApplicationUI import Ui_Dialog
+from categoryDialog import CategoryApplication
 # from retinal import PhotoViewer
 # TODO: 1. import logging
 # TODO: 3. remove all rectangles when changing to other image
@@ -20,6 +21,7 @@ class RetinalApplication(QtWidgets.QDialog):
 
         self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
 
+        # signal connections
         self.ui.pushButton_3.clicked.connect(self.chooseFolder)
         self.ui.listWidget.itemClicked.connect(self.showImage)
         self.ui.graphicsView.photoClicked.connect(self.photoClicked)
@@ -110,8 +112,16 @@ class RetinalApplication(QtWidgets.QDialog):
                 rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
                 self.ui.graphicsView._scene.addItem(rect_item)
 
+                self.openCategoryDialog(self.begin, pos)
+
             # self.update()
             self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
+
+    def openCategoryDialog(self, beginCord, destinCord):
+        dialog = CategoryApplication()
+        dialog.exec_()
+
+        print('after dialog')
 
 
 def isAnImage(fileName):

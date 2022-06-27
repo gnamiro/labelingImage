@@ -8,15 +8,13 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(470, 505)
+        Dialog.resize(639, 505)
         self.gridLayout = QtWidgets.QGridLayout(Dialog)
         self.gridLayout.setObjectName("gridLayout")
-        self.listWidget = QtWidgets.QListWidget(Dialog)
-        self.listWidget.setObjectName("listWidget")
-        self.gridLayout.addWidget(self.listWidget, 0, 0, 2, 1)
         self.verticalLayout = QtWidgets.QVBoxLayout()
         self.verticalLayout.setObjectName("verticalLayout")
         self.pushButton = QtWidgets.QPushButton(Dialog)
@@ -30,21 +28,30 @@ class Ui_Dialog(object):
         self.formLayout.setObjectName("formLayout")
         self.lineEdit = QtWidgets.QLineEdit(Dialog)
         self.lineEdit.setObjectName("lineEdit")
-        self.formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.lineEdit)
+        self.formLayout.setWidget(
+            1, QtWidgets.QFormLayout.FieldRole, self.lineEdit)
         self.pushButton_3 = QtWidgets.QPushButton(Dialog)
-        self.pushButton_3.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.pushButton_3.setCursor(
+            QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.pushButton_3.setObjectName("pushButton_3")
-        self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.pushButton_3)
+        self.formLayout.setWidget(
+            2, QtWidgets.QFormLayout.FieldRole, self.pushButton_3)
         self.label = QtWidgets.QLabel(Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy = QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
+        sizePolicy.setHeightForWidth(
+            self.label.sizePolicy().hasHeightForWidth())
         self.label.setSizePolicy(sizePolicy)
         self.label.setWordWrap(False)
         self.label.setObjectName("label")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.label)
+        self.formLayout.setWidget(
+            0, QtWidgets.QFormLayout.FieldRole, self.label)
         self.gridLayout.addLayout(self.formLayout, 1, 1, 1, 1)
+        self.listView = QtWidgets.QListView(Dialog)
+        self.listView.setObjectName("listView")
+        self.gridLayout.addWidget(self.listView, 0, 0, 2, 1)
 
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -58,6 +65,35 @@ class Ui_Dialog(object):
         self.label.setText(_translate("Dialog", "Enter category name"))
 
 
+class CategoryApplication(QtWidgets.QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.ui = Ui_Dialog()
+        self.ui.setupUi(self)
+
+        self.model = QtGui.QStandardItemModel()
+
+        self.ui.listView.setModel(self.model)
+
+        # signal connections
+        self.ui.pushButton_3.clicked.connect(self.addNewCategory)
+
+    def addNewCategory(self):
+        newCategory = self.ui.lineEdit.text()
+        # print(newCategory)
+        item = self.createCategoryItem(newCategory)
+        self.model.appendRow(item)
+
+    def createCategoryItem(self, categoryName):
+        item = QtGui.QStandardItem(categoryName)
+        item.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+        item.setData(QtCore.QVariant(QtCore.Qt.Unchecked),
+                     QtCore.Qt.CheckStateRole)
+
+        return item
+
+
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
@@ -66,4 +102,3 @@ if __name__ == "__main__":
     ui.setupUi(Dialog)
     Dialog.show()
     sys.exit(app.exec_())
-
