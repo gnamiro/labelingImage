@@ -78,6 +78,7 @@ class CategoryApplication(QtWidgets.QDialog):
 
         # signal connections
         self.ui.pushButton_3.clicked.connect(self.addNewCategory)
+        # self.ui.pushButton.clicked.connect()
 
     def addNewCategory(self):
         newCategory = self.ui.lineEdit.text()
