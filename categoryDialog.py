@@ -7,9 +7,10 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+# from main import database
 
 
-class Ui_Dialog(object):
+class Category_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(639, 505)
@@ -63,36 +64,6 @@ class Ui_Dialog(object):
         self.pushButton_2.setText(_translate("Dialog", "cancel"))
         self.pushButton_3.setText(_translate("Dialog", "Add Category to List"))
         self.label.setText(_translate("Dialog", "Enter category name"))
-
-
-class CategoryApplication(QtWidgets.QDialog):
-    def __init__(self):
-        super().__init__()
-
-        self.ui = Ui_Dialog()
-        self.ui.setupUi(self)
-
-        self.model = QtGui.QStandardItemModel()
-
-        self.ui.listView.setModel(self.model)
-
-        # signal connections
-        self.ui.pushButton_3.clicked.connect(self.addNewCategory)
-        # self.ui.pushButton.clicked.connect()
-
-    def addNewCategory(self):
-        newCategory = self.ui.lineEdit.text()
-        # print(newCategory)
-        item = self.createCategoryItem(newCategory)
-        self.model.appendRow(item)
-
-    def createCategoryItem(self, categoryName):
-        item = QtGui.QStandardItem(categoryName)
-        item.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
-        item.setData(QtCore.QVariant(QtCore.Qt.Unchecked),
-                     QtCore.Qt.CheckStateRole)
-
-        return item
 
 
 if __name__ == "__main__":

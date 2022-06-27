@@ -2,10 +2,13 @@ from cmath import rect
 from PyQt5 import QtCore, QtGui, QtWidgets
 import os
 from retinalApplicationUI import Ui_Dialog
-from categoryDialog import CategoryApplication
+from categoryDialog import Category_Dialog
 # from retinal import PhotoViewer
 # TODO: 1. import logging
 # TODO: 3. remove all rectangles when changing to other image
+
+
+database = {}
 
 
 class RetinalApplication(QtWidgets.QDialog):
@@ -82,6 +85,8 @@ class RetinalApplication(QtWidgets.QDialog):
             # scene.addItem(item)
 
             self.ui.graphicsView.setPhoto(pixmapRescaled)
+
+            database[self.ui.listWidget.currentItem().text()] = []
         else:
             print(imagePath)
         pass
@@ -118,10 +123,64 @@ class RetinalApplication(QtWidgets.QDialog):
             self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
 
     def openCategoryDialog(self, beginCord, destinCord):
-        dialog = CategoryApplication()
+        dialog = CategoryApplication(
+            beginCord, destinCord, self.ui.listWidget.currentItem().text())
         dialog.exec_()
 
         print('after dialog')
+
+
+class CategoryApplication(QtWidgets.QDialog):
+    def __init__(self, beginCord, destCord, imageName):
+        super().__init__()
+
+        self.ui = Category_Dialog()
+        self.ui.setupUi(self)
+
+        self.imageName = imageName
+        self.cords = (beginCord, destCord)
+
+        self.model = QtGui.QStandardItemModel(self)
+        self.ui.listView.setModel(self.model)
+
+        self.info = []
+
+        # signal connections
+        self.ui.pushButton_3.clicked.connect(self.addNewCategory)
+        self.ui.pushButton.clicked.connect(self.saveImageCategory)
+        self.model.itemChanged.connect(self.onCategorySelection)
+
+    def addNewCategory(self):
+        newCategory = self.ui.lineEdit.text()
+        # print(newCategory)
+        item = self.createCategoryItem(newCategory)
+        self.model.appendRow(item)
+
+    def createCategoryItem(self, categoryName):
+        item = QtGui.QStandardItem(categoryName)
+        item.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
+        item.setData(QtCore.QVariant(QtCore.Qt.Unchecked),
+                     QtCore.Qt.CheckStateRole)
+
+        return item
+
+    def onCategorySelection(self, item):
+        if item.checkState() == QtCore.Qt.Checked:
+            item.setBackground(QtGui.QColor(0, 255, 255))
+            item.setForeground(QtGui.QColor(0, 0, 0))
+            # print(item.text())
+            if item.text() not in self.info:
+                self.info.append(item.text())
+            pass
+        else:
+            item.setBackground(QtGui.QColor(255, 255, 255))
+            item.setForeground(QtGui.QColor(0, 0, 0))
+            # print(item.text())
+            if item.text() in self.info:
+                self.info.remove(item.text())
+
+    def saveImageCategory(self):
+        pass
 
 
 def isAnImage(fileName):
