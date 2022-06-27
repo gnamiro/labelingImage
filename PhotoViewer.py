@@ -3,6 +3,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class PhotoViewer(QtWidgets.QGraphicsView):
     photoClicked = QtCore.pyqtSignal(QtCore.QPoint)
+    photoReleased = QtCore.pyqtSignal(QtCore.QPoint)
+    photoMoved = QtCore.pyqtSignal(QtCore.QPoint)
 
     def __init__(self, parent):
         super(PhotoViewer, self).__init__(parent)
@@ -14,10 +16,47 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self.setScene(self._scene)
         self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(30, 30, 30)))
+        self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
+        self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(250, 250, 250)))
         self.setFrameShape(QtWidgets.QFrame.NoFrame)
+
+        self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
+
+    def removeRects(self, rectsList):
+        print(len(rectsList))
+        if(rectsList != []):
+            for rect in rectsList:
+                self._scene.removeItem(rect)
+
+    def mousePressEvent(self, event):
+        if self._photo.isUnderMouse():
+            if self.dragMode() == QtWidgets.QGraphicsView.NoDrag and event.button() == QtCore.Qt.LeftButton:
+                self.begin = event.pos()
+                self.destination = self.begin
+                self.photoClicked.emit(self.mapToScene(self.begin).toPoint())
+                self.update()
+
+    def mouseMoveEvent(self, event):
+        if self._photo.isUnderMouse() and (event.buttons() & QtCore.Qt.LeftButton):
+            self.destination = event.pos()
+            self.photoMoved.emit(
+                self.mapToScene(self.destination).toPoint())
+            # self.update()
+            # print(self.destination, self.begin)
+
+        super(PhotoViewer, self).mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if self._photo.isUnderMouse() and (event.button() & QtCore.Qt.LeftButton):
+            print('hello')
+            self.photoReleased.emit(
+                self.mapToScene(self.destination).toPoint())
+            # rect = QtCore.QRect(self.begin, self.destination)
+            # painter = QtGui.QPainter(self._photo.pixmap())
+            # painter.drawRect(rect.normalized())
+
+            # self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
+            self.update()
 
     def hasPhoto(self):
         return not self._empty
@@ -40,7 +79,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self._zoom = 0
         if pixmap and not pixmap.isNull():
             self._empty = False
-            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
+            self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
             self._photo.setPixmap(pixmap)
         else:
             self._empty = True
@@ -64,52 +103,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                 self._zoom = 0
 
     def toggleDragMode(self):
-        if self.dragMode() == QtWidgets.QGraphicsView.ScrollHandDrag:
-            self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
-        elif not self._photo.pixmap().isNull():
-            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
-
-    def mousePressEvent(self, event):
-        if self._photo.isUnderMouse():
-            self.photoClicked.emit(self.mapToScene(event.pos()).toPoint())
-        super(PhotoViewer, self).mousePressEvent(event)
-
-
-# TEST zoom and panning
-class Window(QtWidgets.QWidget):
-    def __init__(self):
-        super(Window, self).__init__()
-        self.viewer = PhotoViewer(self)
-        # 'Load image' button
-        self.btnLoad = QtWidgets.QToolButton(self)
-        self.btnLoad.setText('Load image')
-        self.btnLoad.clicked.connect(self.loadImage)
-        # Button to change from drag/pan to getting pixel info
-        self.btnPixInfo = QtWidgets.QToolButton(self)
-        self.btnPixInfo.setText('Enter pixel info mode')
-        self.btnPixInfo.clicked.connect(self.pixInfo)
-        self.editPixInfo = QtWidgets.QLineEdit(self)
-        self.editPixInfo.setReadOnly(True)
-        self.viewer.photoClicked.connect(self.photoClicked)
-        # Arrange layout
-        VBlayout = QtWidgets.QVBoxLayout(self)
-        VBlayout.addWidget(self.viewer)
-        HBlayout = QtWidgets.QHBoxLayout()
-        HBlayout.setAlignment(QtCore.Qt.AlignLeft)
-        HBlayout.addWidget(self.btnLoad)
-        HBlayout.addWidget(self.btnPixInfo)
-        HBlayout.addWidget(self.editPixInfo)
-        VBlayout.addLayout(HBlayout)
-
-    def loadImage(self):
-        self.viewer.setPhoto(QtGui.QPixmap('image.jpg'))
-
-    def pixInfo(self):
-        self.viewer.toggleDragMode()
-
-    def photoClicked(self, pos):
-        if self.viewer.dragMode() == QtWidgets.QGraphicsView.NoDrag:
-            self.editPixInfo.setText('%d, %d' % (pos.x(), pos.y()))
+        self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
 
 
 if __name__ == '__main__':
