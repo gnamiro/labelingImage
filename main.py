@@ -5,6 +5,7 @@ import pathlib
 current_directory = str(pathlib.Path(__file__).parent.absolute())
 # from retinal import PhotoViewer
 # TODO: 1. import logging
+# TODO: 3. remove all rectangles when changing to other image
 
 
 class Ui_dialog(object):
@@ -285,7 +286,8 @@ class RetinalApplication(QtWidgets.QDialog):
         if(self.ui.graphicsView.hasPhoto()):
 
             if not self.begin.isNull() and not self.destination.isNull():
-
+                # self.begin, self.destination = standardizeRectangle(
+                #     self.begin, self.destination)
                 rect_item = QtWidgets.QGraphicsRectItem(
                     QtCore.QRectF(self.begin, self.destination))
                 rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
@@ -350,14 +352,13 @@ class RetinalApplication(QtWidgets.QDialog):
 
     def photoReleased(self, pos):
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
-            # print(pos)
             self.ui.graphicsView.removeRects(self.rects)
-            # TODO check if self.begin > pos
-            rect_item = QtWidgets.QGraphicsRectItem(
-                QtCore.QRectF(self.begin, pos))
-            rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
-            # self.rects.append(rect_item)
-            self.ui.graphicsView._scene.addItem(rect_item)
+            # self.begin, pos = standardizeRectangle(self.begin, pos)
+            if checkRectCoordinates(self.begin, pos):
+                rect_item = QtWidgets.QGraphicsRectItem(
+                    QtCore.QRectF(self.begin, pos))
+                rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+                self.ui.graphicsView._scene.addItem(rect_item)
 
             # self.update()
             self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
@@ -368,6 +369,22 @@ def isAnImage(fileName):
         return True
 
     return False
+
+
+def checkRectCoordinates(beginCord, destCord):
+    if beginCord.x() > destCord.x() or beginCord.y() > destCord.y():
+        return False
+    return True
+
+
+def standardizeRectangle(beginCord, destCord):
+    # Incomplete
+    # TODO: if destination coordinate is not standard (Sx < Dx and Sy < Dy)
+    if beginCord.x() > destCord.x() or beginCord.y() > destCord.y():
+        print(beginCord.x(), beginCord.y(), destCord.x(), destCord.y())
+        return destCord, beginCord
+
+    return beginCord, destCord
 
 
 if __name__ == "__main__":
