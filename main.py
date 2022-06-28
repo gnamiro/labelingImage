@@ -1,5 +1,6 @@
+from calendar import c
 from cmath import rect
-from turtle import width
+from genericpath import getsize
 from PyQt5 import QtCore, QtGui, QtWidgets
 import os
 from RetinalApplicationUI import Ui_Dialog
@@ -11,9 +12,26 @@ import numpy as np
 # TODO: 1. import logging
 # TODO: 3. remove all rectangles when changing to other image
 
+clickDistanceThreshold = 0.35
+
+
+class BoundingBox():
+    def __init__(self, rectF):
+        self.rectF = rectF
+        self.stack = 0
+
+    def increment(self):
+        self.stack = min(self.stack + 1, 2)
+
+    def decrement(self):
+        self.stack = max(self.stack - 1, 0)
+
+    def __eq__(self, other):
+        return other is not None and self.stack == other.stack and self.rectF == other.rectF
+
 
 database = pd.DataFrame(
-    columns=['image_id', 'bbox_id', 'center', 'size', 'category'])
+    columns=['image_id', 'bbox_id', 'topLeft', 'size', 'category'])
 
 
 class RetinalApplication(QtWidgets.QDialog):
@@ -24,10 +42,14 @@ class RetinalApplication(QtWidgets.QDialog):
         self.images = []
 
         self.rects = []
+        self.boundingBoxes = []
         self.ui = Ui_Dialog()
         self.ui.setupUi(self)
 
         self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
+        self.currentRectTopLeft = QtCore.QPoint()
+        self.currentRectSize = QtCore.QSize()
+        self.prevSelectedBoundingBox = None
 
         self.dialog = CategoryApplication()
 
@@ -49,12 +71,9 @@ class RetinalApplication(QtWidgets.QDialog):
         painter.drawLine(0, 0, 200, 0)
 
         if(self.ui.graphicsView.hasPhoto()):
-
-            if not self.begin.isNull() and not self.destination.isNull():
-                # self.begin, self.destination = standardizeRectangle(
-                #     self.begin, self.destination)
+            if not self.currentRectTopLeft.isNull() and not self.currentRectSize.isNull():
                 rect_item = QtWidgets.QGraphicsRectItem(
-                    QtCore.QRectF(self.begin, self.destination))
+                    QtCore.QRectF(self.currentRectTopLeft, self.currentRectSize))
                 rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
                 self.rects.append(rect_item)
                 # self.ui.graphicsView.items().clear()
@@ -111,7 +130,8 @@ class RetinalApplication(QtWidgets.QDialog):
 
     def photoMoved(self, pos):
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
-            self.destination = pos
+            self.currentRectTopLeft = getTopLeftOfRect(self.begin, pos)
+            self.currentRectSize = getSizeOfRect(self.begin, pos)
             # self.ui.graphicsView.items().clear()
             # print(self.destination)
             self.ui.graphicsView.removeRects(self.rects[:-1])
@@ -120,39 +140,76 @@ class RetinalApplication(QtWidgets.QDialog):
     def photoReleased(self, pos):
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
             self.ui.graphicsView.removeRects(self.rects)
+            self.currentRectTopLeft = getTopLeftOfRect(self.begin, pos)
+            self.currentRectSize = getSizeOfRect(self.begin, pos)
+            distance = (self.currentRectSize.width() ** 2 +
+                        self.currentRectSize.height() ** 2) ** 0.5
             # self.begin, pos = standardizeRectangle(self.begin, pos)
-            if checkRectCoordinates(self.begin, pos):
-                rect_item = QtWidgets.QGraphicsRectItem(
-                    QtCore.QRectF(self.begin, pos))
+            # if checkRectCoordinates(self.begin, pos):
+            if (self.isItClick(distance)):
+                boundingBox = self.findBoundingBox(pos)
+                if (self.prevSelectedBoundingBox is not None and self.prevSelectedBoundingBox != boundingBox):
+                    self.prevSelectedBoundingBox.decrement()
+                if (boundingBox is not None):
+                    boundingBox.increment()
+                    if (boundingBox.stack == 2):
+                        print(boundingBox.rectF.size())
+                        self.openCategoryDialog(
+                            boundingBox.rectF.topLeft(), boundingBox.rectF.size())
+                        boundingBox.decrement()
+                    self.prevSelectedBoundingBox = boundingBox
+
+            else:
+                rectF = QtCore.QRectF(
+                    self.currentRectTopLeft, self.currentRectSize)
+                rect_item = QtWidgets.QGraphicsRectItem(rectF)
                 rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
                 self.ui.graphicsView._scene.addItem(rect_item)
-
-                self.openCategoryDialog(self.begin, pos)
+                self.boundingBoxes.append(BoundingBox(rectF))
 
             # self.update()
-            self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
+            # self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
+
+    def isItClick(self, distance):
+        if (distance < clickDistanceThreshold):
+            return True
+        return False
+
+    def findBoundingBox(self, pos):
+        minimumArea = 100000000000
+        minimumBoundedBox = None
+        for boundingBox in self.boundingBoxes:
+            if (boundingBox.rectF.contains(pos)):
+                area = boundingBox.rectF.size().width() * boundingBox.rectF.size().height()
+                if area < minimumArea:
+                    minimumArea = area
+                    minimumBoundedBox = boundingBox
+        return minimumBoundedBox
 
     def openCategoryDialog(self, beginCord, destCord):
         self.dialog.set_cords(beginCord, destCord,
                               self.ui.listWidget.currentItem().text())
         self.dialog.exec_()
 
-    def handleDialogInfo(self, status, info, beginPos, destPos):
+    def handleDialogInfo(self, status, info, beginPos, size):
         if status:
             infoList = info.split(',')
             print(infoList)
 
             currentPic = self.ui.listWidget.currentItem().text()
 
-            center, size = calculateRectFeatures(beginPos, destPos)
+            topLeft, rectSize = [beginPos.x(), beginPos.y()], [
+                size.width(), size.height()]
 
-            bboxId = '-'.join(str(e) for e in center + size)
+            bboxId = '-'.join(str(e) for e in topLeft + rectSize)
 
             idx = np.where((database['image_id'] ==
                            currentPic) & (database['bbox_id'] == bboxId))
+            print(idx)
             if not idx[0].size > 0:
-                appendToDatabase(currentPic, bboxId, center, size, info)
-
+                appendToDatabase(currentPic, bboxId, topLeft, rectSize, info)
+            else:
+                database.at[idx[0][0], 'category'] = info
             print(database)
             pass
         else:
@@ -166,10 +223,11 @@ class RetinalApplication(QtWidgets.QDialog):
 def appendToDatabase(imageId, bboxId, center, size, categorList):
     global database
     new_row = {'image_id': [imageId], 'bbox_id': [bboxId],
-               'center': ['-'.join(str(e) for e in center)], 'size': ['-'.join(str(e) for e in size)], 'category': [categorList]}
+               'topLeft': ['-'.join(str(e) for e in center)], 'size': ['-'.join(str(e) for e in size)], 'category': [categorList]}
     df = pd.DataFrame.from_dict(new_row)
 
-    database = pd.concat([database, df])
+    database = pd.concat([database, df], ignore_index=True)
+    # database.reset_index(drop=True)
 
 
 def calculateRectFeatures(startPos, endPos):
@@ -196,14 +254,18 @@ def checkRectCoordinates(beginCord, destCord):
     return True
 
 
-def standardizeRectangle(beginCord, destCord):
-    # Incomplete
-    # TODO: if destination coordinate is not standard (Sx < Dx and Sy < Dy)
-    if beginCord.x() > destCord.x() or beginCord.y() > destCord.y():
-        print(beginCord.x(), beginCord.y(), destCord.x(), destCord.y())
-        return destCord, beginCord
+def getTopLeftOfRect(beginPoint, destPoint):
+    x = min(beginPoint.x(), destPoint.x())
+    y = min(beginPoint.y(), destPoint.y())
 
-    return beginCord, destCord
+    return QtCore.QPoint(x, y)
+
+
+def getSizeOfRect(beginPoint, destPoint):
+    x = abs(beginPoint.x() - destPoint.x())
+    y = abs(beginPoint.y() - destPoint.y())
+
+    return QtCore.QSizeF(x, y)
 
 
 if __name__ == "__main__":

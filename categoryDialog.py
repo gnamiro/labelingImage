@@ -68,8 +68,8 @@ class Ui_Dialog(object):
 
 
 class CategoryApplication(QtWidgets.QDialog):
-    dialogStatus = QtCore.pyqtSignal(int, str, QtCore.QPoint, QtCore.QPoint)
-    sendMessage = QtCore.pyqtSignal(int, str, QtCore.QPoint, QtCore.QPoint)
+    dialogStatus = QtCore.pyqtSignal(int, str, QtCore.QPointF, QtCore.QSizeF)
+    sendMessage = QtCore.pyqtSignal(int, str, QtCore.QPointF, QtCore.QSizeF)
 
     def __init__(self):
         super().__init__()
@@ -88,9 +88,9 @@ class CategoryApplication(QtWidgets.QDialog):
         self.ui.pushButton_2.clicked.connect(self.deleteInfo)
         self.model.itemChanged.connect(self.onCategorySelection)
 
-    def set_cords(self, beginCord, destCord, imageName):
+    def set_cords(self, beginCord, size, imageName):
         self.imageName = imageName
-        self.cords = (beginCord, destCord)
+        self.cords = (beginCord, size)
 
     def addNewCategory(self):
         # TODO: check if there exists name or not.
