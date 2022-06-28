@@ -68,8 +68,10 @@ class Ui_Dialog(object):
 
 
 class CategoryApplication(QtWidgets.QDialog):
-    dialogStatus = QtCore.pyqtSignal(int, str, QtCore.QPointF, QtCore.QSizeF)
-    sendMessage = QtCore.pyqtSignal(int, str, QtCore.QPointF, QtCore.QSizeF)
+    dialogStatus = QtCore.pyqtSignal(
+        int, int, str, QtCore.QPointF, QtCore.QSizeF)
+    sendMessage = QtCore.pyqtSignal(
+        int, int, str, QtCore.QPointF, QtCore.QSizeF)
 
     def __init__(self):
         super().__init__()
@@ -81,6 +83,7 @@ class CategoryApplication(QtWidgets.QDialog):
         self.ui.listView.setModel(self.model)
 
         self.info = []
+        self._category = []
 
         # signal connections
         self.ui.pushButton_3.clicked.connect(self.addNewCategory)
@@ -88,20 +91,27 @@ class CategoryApplication(QtWidgets.QDialog):
         self.ui.pushButton_2.clicked.connect(self.deleteInfo)
         self.model.itemChanged.connect(self.onCategorySelection)
 
-    def set_cords(self, beginCord, size, imageName):
-        self.imageName = imageName
+    def set_cords(self, beginCord, size, boundingBoxIndex):
+        self.index = boundingBoxIndex
         self.cords = (beginCord, size)
 
     def load_data(self, category):
         categoryList = category.split(',')
         print(categoryList)
         # pass
+        for item in categoryList:
+            if item not in self._category:
+                checkboxItem = self.createCategoryItem(item)
+                self.model.appendRow(checkboxItem)
+
         for index in range(self.model.rowCount()):
             item = self.model.item(index)
             if item.text() in categoryList:
                 item.setCheckState(QtCore.Qt.Checked)
             else:
                 item.setCheckState(QtCore.Qt.Unchecked)
+
+        # if list come then remove this
 
     def addNewCategory(self):
         # TODO: check if there exists name or not.
@@ -127,6 +137,8 @@ class CategoryApplication(QtWidgets.QDialog):
             # print(item.text())
             if item.text() not in self.info:
                 self.info.append(item.text())
+            if item.text() not in self._category:
+                self._category.append(item.text())
             pass
         else:
             item.setBackground(QtGui.QColor(255, 255, 255))
@@ -138,13 +150,14 @@ class CategoryApplication(QtWidgets.QDialog):
     def saveInfo(self):
         infoMessage = ','.join(str(e) for e in self.info)
         self.uncheckItems()
-        self.sendMessage.emit(1, infoMessage, self.cords[0], self.cords[1])
+        self.sendMessage.emit(1, self.index, infoMessage,
+                              self.cords[0], self.cords[1])
         self.close()
 
     def deleteInfo(self):
         self.info = []
         self.uncheckItems()
-        self.dialogStatus.emit(0, '', self.cords[0], self.cords[1])
+        self.dialogStatus.emit(0, self.index, '', self.cords[0], self.cords[1])
         self.close()
 
     def uncheckItems(self):

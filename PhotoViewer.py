@@ -1,4 +1,5 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
+import sip
 
 
 class PhotoViewer(QtWidgets.QGraphicsView):
@@ -24,7 +25,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
 
     def removeRects(self, rectsList):
         print(len(rectsList))
-        if(rectsList != []):
+        if(len(rectsList) != 0):
             for rect in rectsList:
                 self._scene.removeItem(rect)
 
