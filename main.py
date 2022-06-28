@@ -4,12 +4,16 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import os
 from RetinalApplicationUI import Ui_Dialog
 from categoryDialog import CategoryApplication
+
+import pandas as pd
+import numpy as np
 # from retinal import PhotoViewer
 # TODO: 1. import logging
 # TODO: 3. remove all rectangles when changing to other image
 
 
-database = {}
+database = pd.DataFrame(
+    columns=['image_id', 'bbox_id', 'center', 'size', 'category'])
 
 
 class RetinalApplication(QtWidgets.QDialog):
@@ -35,6 +39,7 @@ class RetinalApplication(QtWidgets.QDialog):
         self.ui.graphicsView.photoMoved.connect(self.photoMoved)
         self.dialog.dialogStatus.connect(self.handleDialogInfo)
         self.dialog.sendMessage.connect(self.handleDialogInfo)
+        self.ui.pushButton_2.clicked.connect(self.saveImageData)
 
     def paintEvent(self, event):
         super(RetinalApplication, self).paintEvent(event)
@@ -91,7 +96,7 @@ class RetinalApplication(QtWidgets.QDialog):
 
             self.ui.graphicsView.setPhoto(pixmapRescaled)
 
-            database[self.ui.listWidget.currentItem().text()] = []
+            # database[self.ui.listWidget.currentItem().text()] = []
         else:
             print(imagePath)
         pass
@@ -135,14 +140,36 @@ class RetinalApplication(QtWidgets.QDialog):
     def handleDialogInfo(self, status, info, beginPos, destPos):
         if status:
             infoList = info.split(',')
+            print(infoList)
+
             currentPic = self.ui.listWidget.currentItem().text()
 
             center, size = calculateRectFeatures(beginPos, destPos)
-            data = [infoList] + [center] + [size]
-            database[currentPic] += (data)
+
+            bboxId = '-'.join(str(e) for e in center + size)
+
+            idx = np.where((database['image_id'] ==
+                           currentPic) & (database['bbox_id'] == bboxId))
+            if not idx[0].size > 0:
+                appendToDatabase(currentPic, bboxId, center, size, info)
+
             print(database)
+            pass
         else:
             print('remove data')  # After selecting bbox
+
+    def saveImageData(self):
+        database.to_csv('./data/data.csv', index=False)
+        pass
+
+
+def appendToDatabase(imageId, bboxId, center, size, categorList):
+    global database
+    new_row = {'image_id': [imageId], 'bbox_id': [bboxId],
+               'center': ['-'.join(str(e) for e in center)], 'size': ['-'.join(str(e) for e in size)], 'category': [categorList]}
+    df = pd.DataFrame.from_dict(new_row)
+
+    database = pd.concat([database, df])
 
 
 def calculateRectFeatures(startPos, endPos):
@@ -183,6 +210,8 @@ if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
     retianl = RetinalApplication()
+    database = pd.read_csv('./data/data.csv')
+    print(database)
     retianl.show()
     # dialog = QtWidgets.QDialog()
     # ui = Ui_dialog()
