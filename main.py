@@ -1,8 +1,8 @@
 from cmath import rect
 from PyQt5 import QtCore, QtGui, QtWidgets
 import os
-from retinalApplicationUI import Ui_Dialog
-from categoryDialog import Category_Dialog
+from RetinalApplicationUI import Ui_Dialog
+from categoryDialog import CategoryApplication
 # from retinal import PhotoViewer
 # TODO: 1. import logging
 # TODO: 3. remove all rectangles when changing to other image
@@ -137,80 +137,6 @@ class RetinalApplication(QtWidgets.QDialog):
     def handleDialogInfo(self, info):
         infoList = info.split(',')
         print(infoList)
-
-
-class CategoryApplication(QtWidgets.QDialog):
-    dialogStatus = QtCore.pyqtSignal(QtCore.QPoint, QtCore.QPoint)
-    sendMessage = QtCore.pyqtSignal(str)
-
-    def __init__(self):
-        super().__init__()
-
-        self.ui = Category_Dialog()
-        self.ui.setupUi(self)
-
-        self.model = QtGui.QStandardItemModel(self)
-        self.ui.listView.setModel(self.model)
-
-        self.info = []
-
-        # signal connections
-        self.ui.pushButton_3.clicked.connect(self.addNewCategory)
-        self.ui.pushButton.clicked.connect(self.saveInfo)
-        self.ui.pushButton_2.clicked.connect(self.deleteInfo)
-        self.model.itemChanged.connect(self.onCategorySelection)
-
-    def set_cords(self, beginCord, destCord, imageName):
-        self.imageName = imageName
-        self.cords = (beginCord, destCord)
-
-    def addNewCategory(self):
-        newCategory = self.ui.lineEdit.text()
-        # print(newCategory)
-        item = self.createCategoryItem(newCategory)
-        self.model.appendRow(item)
-        self.ui.lineEdit.setText('')
-
-    def createCategoryItem(self, categoryName):
-        item = QtGui.QStandardItem(categoryName)
-        item.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
-        item.setData(QtCore.QVariant(QtCore.Qt.Unchecked),
-                     QtCore.Qt.CheckStateRole)
-
-        return item
-
-    def onCategorySelection(self, item):
-        if item.checkState() == QtCore.Qt.Checked:
-            item.setBackground(QtGui.QColor(0, 255, 255))
-            item.setForeground(QtGui.QColor(0, 0, 0))
-            # print(item.text())
-            if item.text() not in self.info:
-                self.info.append(item.text())
-            pass
-        else:
-            item.setBackground(QtGui.QColor(255, 255, 255))
-            item.setForeground(QtGui.QColor(0, 0, 0))
-            # print(item.text())
-            if item.text() in self.info:
-                self.info.remove(item.text())
-
-    def saveInfo(self):
-        infoMessage = ','.join(str(e) for e in self.info)
-        self.uncheckItems()
-        self.sendMessage.emit(infoMessage)
-        self.close()
-
-    def deleteInfo(self):
-        self.info = []
-        self.uncheckItems()
-        self.dialogStatus.emit(self.cords[0], self.cords[1])
-        self.close()
-
-    def uncheckItems(self):
-        for index in range(self.model.rowCount()):
-            item = self.model.item(index)
-            if item.isCheckable():
-                item.setCheckState(QtCore.Qt.Unchecked)
 
 
 def isAnImage(fileName):
