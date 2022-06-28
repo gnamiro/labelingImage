@@ -1,3 +1,4 @@
+from calendar import c
 from cmath import rect
 from genericpath import getsize
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -8,6 +9,18 @@ from categoryDialog import CategoryApplication
 # TODO: 1. import logging
 # TODO: 3. remove all rectangles when changing to other image
 
+clickDistanceThreshold = 0.1
+
+class BoundingBox():
+    def __init__(self, rectF):
+        self.rectF = rectF
+        self.stack = 0
+
+    def increment(self):
+        self.stack += 1
+    
+    def decrement(self):
+        self.stack = max(self.stack - 1, 0)
 
 class RetinalApplication(QtWidgets.QDialog):
     def __init__(self):
@@ -108,14 +121,18 @@ class RetinalApplication(QtWidgets.QDialog):
             self.ui.graphicsView.removeRects(self.rects)
             self.currentRectTopLeft = getTopLeftOfRect(self.begin, pos)
             self.currentRectSize = getSizeOfRect(self.begin, pos)
+            distance = (self.currentRectSize.width() ** 2 + self.currentRectSize.height() ** 2) ** 0.5
             # self.begin, pos = standardizeRectangle(self.begin, pos)
             # if checkRectCoordinates(self.begin, pos):
-            rect_item = QtWidgets.QGraphicsRectItem(
-                QtCore.QRectF(self.currentRectTopLeft, self.currentRectSize))
-            rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
-            self.ui.graphicsView._scene.addItem(rect_item)
+            if (self.isItClick(distance)):
+                self.openCategoryDialog(self.begin, pos)
+            else:
+                rect_item = QtWidgets.QGraphicsRectItem(
+                    QtCore.QRectF(self.currentRectTopLeft, self.currentRectSize))
+                rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+                self.ui.graphicsView._scene.addItem(rect_item)
 
-            self.openCategoryDialog(self.begin, pos)
+            
 
             # self.update()
             self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
@@ -125,6 +142,11 @@ class RetinalApplication(QtWidgets.QDialog):
         dialog.exec_()
 
         print('after dialog')
+    
+    def isItClick(self, distance):
+        if (distance < clickDistanceThreshold):
+            return True
+        return False
 
 
 def isAnImage(fileName):
