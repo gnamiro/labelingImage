@@ -189,9 +189,21 @@ class RetinalApplication(QtWidgets.QDialog):
                     minimumBoundedBox = boundingBox
         return minimumBoundedBox
 
-    def openCategoryDialog(self, beginCord, destCord):
-        self.dialog.set_cords(beginCord, destCord,
-                              self.ui.listWidget.currentItem().text())
+    def openCategoryDialog(self, beginCord, size):
+        topLeft, rectSize = [beginCord.x(), beginCord.y()], [
+            size.width(), size.height()]
+        currentPic = self.ui.listWidget.currentItem().text()
+
+        bboxId = '-'.join(str(e) for e in topLeft + rectSize)
+        self.dialog.set_cords(beginCord, size, currentPic)
+
+        idx = np.where((database['image_id'] ==
+                        currentPic) & (database['bbox_id'] == bboxId))
+        if(idx[0].size > 0):
+            self.dialog.load_data(database.at[idx[0][0], 'category'])
+        else:
+            self.dialog.uncheckItems()
+
         self.dialog.exec_()
 
     def handleDialogInfo(self, status, info, beginPos, size):

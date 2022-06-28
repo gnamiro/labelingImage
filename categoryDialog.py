@@ -92,6 +92,17 @@ class CategoryApplication(QtWidgets.QDialog):
         self.imageName = imageName
         self.cords = (beginCord, size)
 
+    def load_data(self, category):
+        categoryList = category.split(',')
+        print(categoryList)
+        # pass
+        for index in range(self.model.rowCount()):
+            item = self.model.item(index)
+            if item.text() in categoryList:
+                item.setCheckState(QtCore.Qt.Checked)
+            else:
+                item.setCheckState(QtCore.Qt.Unchecked)
+
     def addNewCategory(self):
         # TODO: check if there exists name or not.
         newCategory = self.ui.lineEdit.text()
