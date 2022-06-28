@@ -28,6 +28,9 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             for rect in rectsList:
                 self._scene.removeItem(rect)
 
+    def removeRect(self, rectItem):
+        self._scene.removeItem(rectItem)
+
     def mousePressEvent(self, event):
         if self._photo.isUnderMouse():
             if self.dragMode() == QtWidgets.QGraphicsView.NoDrag and event.button() == QtCore.Qt.LeftButton:

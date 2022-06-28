@@ -11,8 +11,9 @@ import numpy as np
 # from retinal import PhotoViewer
 # TODO: 1. import logging
 # TODO: 3. remove all rectangles when changing to other image
+# TODO: 4. define new rectItem to change its color
 
-clickDistanceThreshold = 0.35
+clickDistanceThreshold = 0.04
 
 
 class BoundingBox():
@@ -43,6 +44,7 @@ class RetinalApplication(QtWidgets.QDialog):
 
         self.rects = []
         self.boundingBoxes = []
+        self.rect_items = []
         self.ui = Ui_Dialog()
         self.ui.setupUi(self)
 
@@ -166,6 +168,7 @@ class RetinalApplication(QtWidgets.QDialog):
                 rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
                 self.ui.graphicsView._scene.addItem(rect_item)
                 self.boundingBoxes.append(BoundingBox(rectF))
+                self.rect_items.append(rect_item)
 
             # self.update()
             # self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
@@ -192,20 +195,17 @@ class RetinalApplication(QtWidgets.QDialog):
         self.dialog.exec_()
 
     def handleDialogInfo(self, status, info, beginPos, size):
+        global database
+        topLeft, rectSize = [beginPos.x(), beginPos.y()], [
+            size.width(), size.height()]
+        currentPic = self.ui.listWidget.currentItem().text()
+
+        bboxId = '-'.join(str(e) for e in topLeft + rectSize)
+
         if status:
-            infoList = info.split(',')
-            print(infoList)
-
-            currentPic = self.ui.listWidget.currentItem().text()
-
-            topLeft, rectSize = [beginPos.x(), beginPos.y()], [
-                size.width(), size.height()]
-
-            bboxId = '-'.join(str(e) for e in topLeft + rectSize)
-
+            # infoList = info.split(',')
             idx = np.where((database['image_id'] ==
                            currentPic) & (database['bbox_id'] == bboxId))
-            print(idx)
             if not idx[0].size > 0:
                 appendToDatabase(currentPic, bboxId, topLeft, rectSize, info)
             else:
@@ -213,7 +213,29 @@ class RetinalApplication(QtWidgets.QDialog):
             print(database)
             pass
         else:
-            print('remove data')  # After selecting bbox
+            boundingBox = self.findRectItem(topLeft, rectSize)
+            if boundingBox != None:
+                self.rect_items.remove(boundingBox)
+                self.ui.graphicsView.removeRect(boundingBox)
+                idx = np.where((database['image_id'] ==
+                                currentPic) & (database['bbox_id'] == bboxId))
+                print(idx)
+                if idx[0].size > 0:
+                    database = database.drop(idx[0][0])
+
+    def findRectItem(self, topLeft, rectSize):
+        print(len(self.rect_items))
+        for rect_item in self.rect_items:
+            rectF = rect_item.rect()
+            print(topLeft, rectF.x(), rectF.y())
+
+            if(rectF.x() == topLeft[0] and rectF.y() == topLeft[1]):
+                rectFSize = rectF.size()
+                print(rectSize, rectFSize.width(), rectFSize.height())
+                if(rectFSize.width() == rectSize[0] and rectFSize.height() == rectSize[1]):
+                    return rect_item
+
+        return None
 
     def saveImageData(self):
         database.to_csv('./data/data.csv', index=False)
