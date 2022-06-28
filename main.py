@@ -9,7 +9,7 @@ from categoryDialog import CategoryApplication
 # TODO: 1. import logging
 # TODO: 3. remove all rectangles when changing to other image
 
-clickDistanceThreshold = 0.1
+clickDistanceThreshold = 0.2
 
 class BoundingBox():
     def __init__(self, rectF):
@@ -17,10 +17,13 @@ class BoundingBox():
         self.stack = 0
 
     def increment(self):
-        self.stack += 1
+        self.stack = min(self.stack + 1, 2)
     
     def decrement(self):
         self.stack = max(self.stack - 1, 0)
+    
+    def __eq__(self, other):
+        return other is not None and self.stack == other.stack and self.rectF == other.rectF
 
 class RetinalApplication(QtWidgets.QDialog):
     def __init__(self):
@@ -30,12 +33,14 @@ class RetinalApplication(QtWidgets.QDialog):
         self.images = []
 
         self.rects = []
+        self.boundingBoxes = []
         self.ui = Ui_Dialog()
         self.ui.setupUi(self)
 
         self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
         self.currentRectTopLeft = QtCore.QPoint() 
         self.currentRectSize = QtCore.QSize()
+        self.prevSelectedBoundingBox = None
 
         # signal connections
         self.ui.pushButton_3.clicked.connect(self.chooseFolder)
@@ -125,17 +130,27 @@ class RetinalApplication(QtWidgets.QDialog):
             # self.begin, pos = standardizeRectangle(self.begin, pos)
             # if checkRectCoordinates(self.begin, pos):
             if (self.isItClick(distance)):
-                self.openCategoryDialog(self.begin, pos)
+                boundingBox = self.findBoundingBox(pos)
+                if (self.prevSelectedBoundingBox is not None and self.prevSelectedBoundingBox != boundingBox):
+                    self.prevSelectedBoundingBox.decrement()
+                if (boundingBox is not None):
+                    boundingBox.increment()
+                    if (boundingBox.stack == 2):
+                        self.openCategoryDialog(self.begin, pos)
+                        boundingBox.decrement()
+                    self.prevSelectedBoundingBox = boundingBox 
+                
             else:
-                rect_item = QtWidgets.QGraphicsRectItem(
-                    QtCore.QRectF(self.currentRectTopLeft, self.currentRectSize))
+                rectF = QtCore.QRectF(self.currentRectTopLeft, self.currentRectSize)
+                rect_item = QtWidgets.QGraphicsRectItem(rectF)
                 rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
                 self.ui.graphicsView._scene.addItem(rect_item)
+                self.boundingBoxes.append(BoundingBox(rectF))
 
             
 
             # self.update()
-            self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
+            # self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
 
     def openCategoryDialog(self, beginCord, destinCord):
         dialog = CategoryApplication()
@@ -147,6 +162,19 @@ class RetinalApplication(QtWidgets.QDialog):
         if (distance < clickDistanceThreshold):
             return True
         return False
+    
+    def findBoundingBox(self, pos):
+        minimumArea = 100000000000
+        minimumBoundedBox = None
+        for boundingBox in self.boundingBoxes:
+            if (boundingBox.rectF.contains(pos)):
+                area = boundingBox.rectF.size().width() * boundingBox.rectF.size().height()
+                if area < minimumArea:
+                    minimumArea = area
+                    minimumBoundedBox = boundingBox
+        return minimumBoundedBox
+
+
 
 
 def isAnImage(fileName):
