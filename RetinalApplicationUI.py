@@ -7,7 +7,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from photoViewer import PhotoViewer
+from PhotoViewer import PhotoViewer
 import pathlib
 current_directory = str(pathlib.Path(__file__).parent.absolute())
 

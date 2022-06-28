@@ -234,6 +234,7 @@ class RetinalApplication(QtWidgets.QDialog):
                 print(idx)
                 if idx[0].size > 0:
                     database = database.drop(idx[0][0])
+                    database = database.reset_index(drop=True)
 
     def findRectItem(self, topLeft, rectSize):
         print(len(self.rect_items))
