@@ -1,4 +1,5 @@
 from cmath import rect
+from turtle import width
 from PyQt5 import QtCore, QtGui, QtWidgets
 import os
 from RetinalApplicationUI import Ui_Dialog
@@ -32,7 +33,7 @@ class RetinalApplication(QtWidgets.QDialog):
         self.ui.graphicsView.photoClicked.connect(self.photoClicked)
         self.ui.graphicsView.photoReleased.connect(self.photoReleased)
         self.ui.graphicsView.photoMoved.connect(self.photoMoved)
-        self.dialog.dialogStatus.connect(self.deleteDialogRect)
+        self.dialog.dialogStatus.connect(self.handleDialogInfo)
         self.dialog.sendMessage.connect(self.handleDialogInfo)
 
     def paintEvent(self, event):
@@ -131,12 +132,28 @@ class RetinalApplication(QtWidgets.QDialog):
                               self.ui.listWidget.currentItem().text())
         self.dialog.exec_()
 
-    def deleteDialogRect(self, beginPos, destPos):
-        print('remove data')  # After selecting bbox
+    def handleDialogInfo(self, status, info, beginPos, destPos):
+        if status:
+            infoList = info.split(',')
+            currentPic = self.ui.listWidget.currentItem().text()
 
-    def handleDialogInfo(self, info):
-        infoList = info.split(',')
-        print(infoList)
+            center, size = calculateRectFeatures(beginPos, destPos)
+            data = [infoList] + [center] + [size]
+            database[currentPic] += (data)
+            print(database)
+        else:
+            print('remove data')  # After selecting bbox
+
+
+def calculateRectFeatures(startPos, endPos):
+    startPosX, startPosY, endPosX, endPosY = startPos.x(
+    ), startPos.y(), endPos.x(), endPos.y()
+    centerX, centerY = (startPosX + endPosX) / \
+        2, (startPosY + endPosY)/2
+    width, height = abs(startPosX - endPosX
+                        ), abs(startPosY - endPosY)
+
+    return [centerX, centerY], [width, height]
 
 
 def isAnImage(fileName):

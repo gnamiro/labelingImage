@@ -68,8 +68,8 @@ class Ui_Dialog(object):
 
 
 class CategoryApplication(QtWidgets.QDialog):
-    dialogStatus = QtCore.pyqtSignal(QtCore.QPoint, QtCore.QPoint)
-    sendMessage = QtCore.pyqtSignal(str)
+    dialogStatus = QtCore.pyqtSignal(int, str, QtCore.QPoint, QtCore.QPoint)
+    sendMessage = QtCore.pyqtSignal(int, str, QtCore.QPoint, QtCore.QPoint)
 
     def __init__(self):
         super().__init__()
@@ -96,8 +96,9 @@ class CategoryApplication(QtWidgets.QDialog):
         # TODO: check if there exists name or not.
         newCategory = self.ui.lineEdit.text()
         # print(newCategory)
-        item = self.createCategoryItem(newCategory)
-        self.model.appendRow(item)
+        if(newCategory != ''):
+            item = self.createCategoryItem(newCategory)
+            self.model.appendRow(item)
         self.ui.lineEdit.setText('')
 
     def createCategoryItem(self, categoryName):
@@ -126,13 +127,13 @@ class CategoryApplication(QtWidgets.QDialog):
     def saveInfo(self):
         infoMessage = ','.join(str(e) for e in self.info)
         self.uncheckItems()
-        self.sendMessage.emit(infoMessage)
+        self.sendMessage.emit(1, infoMessage, self.cords[0], self.cords[1])
         self.close()
 
     def deleteInfo(self):
         self.info = []
         self.uncheckItems()
-        self.dialogStatus.emit(self.cords[0], self.cords[1])
+        self.dialogStatus.emit(0, '', self.cords[0], self.cords[1])
         self.close()
 
     def uncheckItems(self):
