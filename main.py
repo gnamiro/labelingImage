@@ -3,7 +3,7 @@ from cmath import rect
 from genericpath import getsize
 from PyQt5 import QtCore, QtGui, QtWidgets
 import os
-from RetinalApplicationUI import Ui_Dialog
+from LabelApplicationUI import Ui_dialog
 from categoryDialog import CategoryApplication
 
 import pandas as pd
@@ -48,7 +48,7 @@ class RetinalApplication(QtWidgets.QDialog):
         self.xSize = 1
         self.ySize = 1
 
-        self.ui = Ui_Dialog()
+        self.ui = Ui_dialog()
         self.ui.setupUi(self)
 
         self.begin, self.destination = QtCore.QPointF(), QtCore.QPointF()
@@ -59,15 +59,15 @@ class RetinalApplication(QtWidgets.QDialog):
         self.dialog = CategoryApplication()
 
         # signal connections
-        self.ui.pushButton_3.clicked.connect(self.chooseFolder)
+        self.ui.OpenFolderButton.clicked.connect(self.chooseFolder)
         self.ui.listWidget.itemClicked.connect(self.showImage)
         self.ui.graphicsView.photoClicked.connect(self.photoClicked)
         self.ui.graphicsView.photoReleased.connect(self.photoReleased)
         self.ui.graphicsView.photoMoved.connect(self.photoMoved)
         self.dialog.dialogStatus.connect(self.handleDialogInfo)
         self.dialog.sendMessage.connect(self.handleDialogInfo)
-        self.ui.pushButton_2.clicked.connect(self.saveImageData)
-        self.ui.pushButton.clicked.connect(self.deleteAllInfo)
+        self.ui.SaveButton.clicked.connect(self.saveImageData)
+        self.ui.DeleteButton.clicked.connect(self.deleteAllInfo)
 
     def refreshScene(self):
         self.ui.graphicsView.removeRects(self.rect_items)
