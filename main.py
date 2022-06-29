@@ -16,7 +16,7 @@ import numpy as np
 clickDistanceThreshold = 2
 
 database = pd.DataFrame(
-    columns=['image_id', 'bbox_id', 'topLeft', 'size', 'category'])
+    columns=['image_id', 'bbox_id', 'top_left_x', 'top_left_y', 'width', 'height', 'category'])
 
 
 class BoundingBox():
@@ -44,12 +44,16 @@ class RetinalApplication(QtWidgets.QDialog):
         self.rects = []
         self.boundingBoxes = []
         self.rect_items = []
+
+        self.xSize = 1
+        self.ySize = 1
+
         self.ui = Ui_Dialog()
         self.ui.setupUi(self)
 
-        self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
-        self.currentRectTopLeft = QtCore.QPoint()
-        self.currentRectSize = QtCore.QSize()
+        self.begin, self.destination = QtCore.QPointF(), QtCore.QPointF()
+        self.currentRectTopLeft = QtCore.QPointF()
+        self.currentRectSize = QtCore.QSizeF()
         self.prevSelectedBoundingBox = None
 
         self.dialog = CategoryApplication()
@@ -69,8 +73,8 @@ class RetinalApplication(QtWidgets.QDialog):
         self.ui.graphicsView.removeRects(self.rect_items)
         self.rect_items = []
         self.boundingBoxes = []
-        self.currentRectTopLeft = QtCore.QPoint()
-        self.currentRectSize = QtCore.QSize()
+        self.currentRectTopLeft = QtCore.QPointF()
+        self.currentRectSize = QtCore.QSizeF()
         self.prevSelectedBoundingBox = None
 
     def paintEvent(self, event):
@@ -110,7 +114,6 @@ class RetinalApplication(QtWidgets.QDialog):
         print(images)
 
     def showImage(self):
-        print(self.rect_items)
         print(self.ui.listWidget.currentItem().text())
         imagePath = self.dir + '/' + self.ui.listWidget.currentItem().text()
         if(os.path.isfile(imagePath)):
@@ -121,6 +124,8 @@ class RetinalApplication(QtWidgets.QDialog):
             pixmapRescaled = pixmap.scaled(
                 width, height, QtCore.Qt.KeepAspectRatio)
 
+            self.xSize = pixmapRescaled.size().width()
+            self.ySize = pixmapRescaled.size().height()
             # item = QtWidgets.QGraphicsPixmapItem(pixmapRescaled)
             # scene.addItem(item)
 
@@ -141,9 +146,11 @@ class RetinalApplication(QtWidgets.QDialog):
         # print(dataReleventToImage)
         for index, row in dataReleventToImage.iterrows():
             # print(row['topLeft'], row['size'])
-            topLeftdim = [int(float(e)) for e in row['topLeft'].split('-')]
-            rectSizedim = [float(e) for e in row['size'].split('-')]
-            topLeft = QtCore.QPoint(
+            topLeftdim = [float(row['top_left_x']*self.xSize),
+                          float(row['top_left_y']*self.ySize)]
+            rectSizedim = [float(row['width'])*self.xSize,
+                           float(row['height'])*self.ySize]
+            topLeft = QtCore.QPointF(
                 topLeftdim[0], topLeftdim[1])
             rectSize = QtCore.QSizeF(
                 rectSizedim[0], rectSizedim[1])
@@ -166,6 +173,7 @@ class RetinalApplication(QtWidgets.QDialog):
             # self.ui.graphicsView.items().clear()
             # print(self.destination)
             self.ui.graphicsView.removeRects(self.rects[:-1])
+
             self.update()
 
     def photoReleased(self, pos):
@@ -184,7 +192,6 @@ class RetinalApplication(QtWidgets.QDialog):
                 if (boundingBox is not None):
                     boundingBox.increment()
                     if (boundingBox.stack == 2):
-                        print(boundingBox.rectF.size())
                         self.openCategoryDialog(
                             boundingBox.rectF.topLeft(), boundingBox.rectF.size(), index)
                         boundingBox.decrement()
@@ -227,8 +234,8 @@ class RetinalApplication(QtWidgets.QDialog):
         return minimumBoundedBox, minimumBoundedBoxIndex
 
     def openCategoryDialog(self, beginCord, size, boundingBoxIndex):
-        topLeft, rectSize = [beginCord.x(), beginCord.y()], [
-            size.width(), size.height()]
+        topLeft, rectSize = [round(beginCord.x()/self.xSize, 14), round(beginCord.y()/self.ySize, 14)], [
+            round(size.width()/self.xSize, 14), round(size.height()/self.ySize, 14)]
         currentPic = self.ui.listWidget.currentItem().text()
 
         bboxId = '-'.join(str(e) for e in topLeft + rectSize)
@@ -245,34 +252,38 @@ class RetinalApplication(QtWidgets.QDialog):
 
     def handleDialogInfo(self, status, index, info, beginPos, size):
         global database
-        topLeft, rectSize = [beginPos.x(), beginPos.y()], [
-            size.width(), size.height()]
+        # TODO: 5. improve beginPos
+        topLeftRate, rectSizeRate = [round(beginPos.x()/self.xSize, 14), round(beginPos.y()/self.ySize, 14)], [
+            round(size.width()/self.xSize, 14), round(size.height()/self.ySize, 14)]
+
         currentPic = self.ui.listWidget.currentItem().text()
 
-        bboxId = '-'.join(str(e) for e in topLeft + rectSize)
+        bboxId = '-'.join(str(e) for e in topLeftRate + rectSizeRate)
 
-        if status:
+        if status and (info != ''):
+            topLeft, rectSize = [beginPos.x()/self.xSize, beginPos.y()/self.ySize], [
+                size.width()/self.xSize, size.height()/self.ySize]
             # infoList = info.split(',')
             idx = np.where((database['image_id'] ==
                            currentPic) & (database['bbox_id'] == bboxId))
             if not idx[0].size > 0:
-                appendToDatabase(currentPic, bboxId, topLeft, rectSize, info)
+                appendToDatabase(currentPic, bboxId,
+                                 topLeft, rectSize, info)
             else:
                 database.at[idx[0][0], 'category'] = info
             print(database)
             pass
         else:
+            topLeft, rectSize = [beginPos.x(), beginPos.y()], [
+                size.width(), size.height()]
             boundingBox = self.findRectItem(topLeft, rectSize)
             if boundingBox != None:
-                # print('founded')
-                # print(len(self.rect_items))
                 self.rect_items.remove(boundingBox)
                 del self.boundingBoxes[index]
                 # print(len(self.rect_items))
                 self.ui.graphicsView.removeRect(boundingBox)
                 idx = np.where((database['image_id'] ==
                                 currentPic) & (database['bbox_id'] == bboxId))
-                print(idx)
                 if idx[0].size > 0:
                     database = database.drop(idx[0][0])
                     database = database.reset_index(drop=True)
@@ -280,14 +291,11 @@ class RetinalApplication(QtWidgets.QDialog):
                 print('not founded')
 
     def findRectItem(self, topLeft, rectSize):
-        print('find rect item: ', len(self.rect_items))
         for rect_item in self.rect_items:
             rectF = rect_item.rect()
-            print(topLeft, rectF.x(), rectF.y())
 
             if(rectF.x() == topLeft[0] and rectF.y() == topLeft[1]):
                 rectFSize = rectF.size()
-                print(rectSize, rectFSize.width(), rectFSize.height())
                 if(rectFSize.width() == rectSize[0] and rectFSize.height() == rectSize[1]):
                     return rect_item
 
@@ -304,7 +312,7 @@ class RetinalApplication(QtWidgets.QDialog):
 def appendToDatabase(imageId, bboxId, center, size, categorList):
     global database
     new_row = {'image_id': [imageId], 'bbox_id': [bboxId],
-               'topLeft': ['-'.join(str(e) for e in center)], 'size': ['-'.join(str(e) for e in size)], 'category': [categorList]}
+               'top_left_x': [center[0]], 'top_left_y': [center[1]], 'width': [size[0]], 'height': [size[1]], 'category': [categorList]}
     df = pd.DataFrame.from_dict(new_row)
 
     database = pd.concat([database, df], ignore_index=True)
@@ -339,7 +347,7 @@ def getTopLeftOfRect(beginPoint, destPoint):
     x = min(beginPoint.x(), destPoint.x())
     y = min(beginPoint.y(), destPoint.y())
 
-    return QtCore.QPoint(x, y)
+    return QtCore.QPointF(x, y)
 
 
 def getSizeOfRect(beginPoint, destPoint):

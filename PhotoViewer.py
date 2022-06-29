@@ -2,9 +2,9 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class PhotoViewer(QtWidgets.QGraphicsView):
-    photoClicked = QtCore.pyqtSignal(QtCore.QPoint)
-    photoReleased = QtCore.pyqtSignal(QtCore.QPoint)
-    photoMoved = QtCore.pyqtSignal(QtCore.QPoint)
+    photoClicked = QtCore.pyqtSignal(QtCore.QPointF)
+    photoReleased = QtCore.pyqtSignal(QtCore.QPointF)
+    photoMoved = QtCore.pyqtSignal(QtCore.QPointF)
 
     def __init__(self, parent):
         super(PhotoViewer, self).__init__(parent)
@@ -20,10 +20,10 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(250, 250, 250)))
         self.setFrameShape(QtWidgets.QFrame.NoFrame)
 
-        self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
+        self.begin, self.destination = QtCore.QPointF(), QtCore.QPointF()
 
     def removeRects(self, rectsList):
-        print(len(rectsList))
+        # print(len(rectsList))
         if(len(rectsList) != 0):
             for rect in rectsList:
                 self._scene.removeItem(rect)
@@ -36,14 +36,15 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             if self.dragMode() == QtWidgets.QGraphicsView.NoDrag and event.button() == QtCore.Qt.LeftButton:
                 self.begin = event.pos()
                 self.destination = self.begin
-                self.photoClicked.emit(self.mapToScene(self.begin).toPoint())
+                self.photoClicked.emit(self.mapToScene(self.begin))
                 self.update()
 
     def mouseMoveEvent(self, event):
         if self._photo.isUnderMouse() and (event.buttons() & QtCore.Qt.LeftButton):
             self.destination = event.pos()
+
             self.photoMoved.emit(
-                self.mapToScene(self.destination).toPoint())
+                self.mapToScene(self.destination))
             # self.update()
             # print(self.destination, self.begin)
 
@@ -51,9 +52,8 @@ class PhotoViewer(QtWidgets.QGraphicsView):
 
     def mouseReleaseEvent(self, event):
         if self._photo.isUnderMouse() and (event.button() & QtCore.Qt.LeftButton):
-            print('hello')
             self.photoReleased.emit(
-                self.mapToScene(self.destination).toPoint())
+                self.mapToScene(self.destination))
             # rect = QtCore.QRect(self.begin, self.destination)
             # painter = QtGui.QPainter(self._photo.pixmap())
             # painter.drawRect(rect.normalized())
