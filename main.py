@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from calendar import c
 from cmath import rect
 from genericpath import getsize
