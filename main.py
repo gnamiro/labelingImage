@@ -68,6 +68,7 @@ class RetinalApplication(QtWidgets.QDialog):
         self.dialog.sendMessage.connect(self.handleDialogInfo)
         self.ui.SaveButton.clicked.connect(self.saveImageData)
         self.ui.DeleteButton.clicked.connect(self.deleteAllInfo)
+        self.ui.DataFilePathButton.clicked.connect(self.chooseDataPath)
 
     def refreshScene(self):
         self.ui.graphicsView.removeRects(self.rect_items)
@@ -91,6 +92,9 @@ class RetinalApplication(QtWidgets.QDialog):
                 rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
                 self.rects.append(rect_item)
                 self.ui.graphicsView._scene.addItem(rect_item)
+
+    def chooseDataPath(self):
+        print('choose your data path')
 
     def chooseFolder(self):
         self.dir = QtWidgets.QFileDialog.getExistingDirectory(
@@ -272,6 +276,9 @@ class RetinalApplication(QtWidgets.QDialog):
                                  topLeft, rectSize, info, self.dir)
             else:
                 database.at[idx[0][0], 'category'] = info
+
+            if(self.isAutoSave()):
+                self.saveImageData()
             print(database)
             pass
         else:
@@ -316,7 +323,14 @@ class RetinalApplication(QtWidgets.QDialog):
         # TODO: 6. Remove data inside dataframe relevent to this picture
     def deleteAllInfo(self):
         deleteDataReleventToImage(self.ui.listWidget.currentItem().text())
+
+        if(self.isAutoSave()):
+            self.saveImageData()
+
         self.refreshScene()
+
+    def isAutoSave(self):
+        return self.ui.AutoSaveCheckbox.isChecked()
 
 
 def deleteDataReleventToImage(ImageName):
