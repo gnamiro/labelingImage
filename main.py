@@ -16,7 +16,7 @@ import numpy as np
 clickDistanceThreshold = 2
 
 database = pd.DataFrame(
-    columns=['image_id', 'bbox_id', 'top_left_x', 'top_left_y', 'width', 'height', 'category'])
+    columns=['image_id', 'bbox_id', 'bbox_x', 'bbox_y', 'bbox_w', 'bbox_h', 'category', 'root_dir'])
 
 
 class BoundingBox():
@@ -67,7 +67,7 @@ class RetinalApplication(QtWidgets.QDialog):
         self.dialog.dialogStatus.connect(self.handleDialogInfo)
         self.dialog.sendMessage.connect(self.handleDialogInfo)
         self.ui.pushButton_2.clicked.connect(self.saveImageData)
-        self.ui.pushButton.clicked.connect(self.cancel)
+        self.ui.pushButton.clicked.connect(self.deleteAllInfo)
 
     def refreshScene(self):
         self.ui.graphicsView.removeRects(self.rect_items)
@@ -146,10 +146,10 @@ class RetinalApplication(QtWidgets.QDialog):
         # print(dataReleventToImage)
         for index, row in dataReleventToImage.iterrows():
             # print(row['topLeft'], row['size'])
-            topLeftdim = [float(row['top_left_x']*self.xSize),
-                          float(row['top_left_y']*self.ySize)]
-            rectSizedim = [float(row['width'])*self.xSize,
-                           float(row['height'])*self.ySize]
+            topLeftdim = [float(row['bbox_x']*self.xSize),
+                          float(row['bbox_y']*self.ySize)]
+            rectSizedim = [float(row['bbox_w'])*self.xSize,
+                           float(row['bbox_h'])*self.ySize]
             topLeft = QtCore.QPointF(
                 topLeftdim[0], topLeftdim[1])
             rectSize = QtCore.QSizeF(
@@ -241,8 +241,8 @@ class RetinalApplication(QtWidgets.QDialog):
         bboxId = '-'.join(str(e) for e in topLeft + rectSize)
         self.dialog.set_cords(beginCord, size, boundingBoxIndex)
 
-        idx = np.where((database['image_id'] ==
-                        currentPic) & (database['bbox_id'] == bboxId))
+        idx = self.findSelectedBbox(currentPic, bboxId)
+
         if(idx[0].size > 0):
             self.dialog.load_data(database.at[idx[0][0], 'category'])
         else:
@@ -264,11 +264,12 @@ class RetinalApplication(QtWidgets.QDialog):
             topLeft, rectSize = [beginPos.x()/self.xSize, beginPos.y()/self.ySize], [
                 size.width()/self.xSize, size.height()/self.ySize]
             # infoList = info.split(',')
-            idx = np.where((database['image_id'] ==
-                           currentPic) & (database['bbox_id'] == bboxId))
+
+            idx = self.findSelectedBbox(currentPic, bboxId)
+
             if not idx[0].size > 0:
                 appendToDatabase(currentPic, bboxId,
-                                 topLeft, rectSize, info)
+                                 topLeft, rectSize, info, self.dir)
             else:
                 database.at[idx[0][0], 'category'] = info
             print(database)
@@ -282,13 +283,20 @@ class RetinalApplication(QtWidgets.QDialog):
                 del self.boundingBoxes[index]
                 # print(len(self.rect_items))
                 self.ui.graphicsView.removeRect(boundingBox)
-                idx = np.where((database['image_id'] ==
-                                currentPic) & (database['bbox_id'] == bboxId))
+                idx = self.findSelectedBbox(currentPic, bboxId)
+
                 if idx[0].size > 0:
                     database = database.drop(idx[0][0])
                     database = database.reset_index(drop=True)
             else:
                 print('not founded')
+
+    def findSelectedBbox(self, imageId, bboxId):
+        global database
+        idx = np.where((database['image_id'] ==
+                        imageId) & (database['bbox_id'] == bboxId))
+
+        return idx
 
     def findRectItem(self, topLeft, rectSize):
         for rect_item in self.rect_items:
@@ -305,14 +313,28 @@ class RetinalApplication(QtWidgets.QDialog):
         database.to_csv('./data/data.csv', index=False)
         pass
 
-    def cancel(self):
+        # TODO: 6. Remove data inside dataframe relevent to this picture
+    def deleteAllInfo(self):
+        deleteDataReleventToImage(self.ui.listWidget.currentItem().text())
         self.refreshScene()
 
 
-def appendToDatabase(imageId, bboxId, center, size, categorList):
+def deleteDataReleventToImage(ImageName):
+    global database
+
+    idx = np.where(database['image_id'] == ImageName)
+    if idx[0].size > 0:
+        database.drop(idx[0], axis=0, inplace=True)
+        database = database.reset_index(drop=True)
+
+    print(database)
+    pass
+
+
+def appendToDatabase(imageId, bboxId, center, size, categorList, dir):
     global database
     new_row = {'image_id': [imageId], 'bbox_id': [bboxId],
-               'top_left_x': [center[0]], 'top_left_y': [center[1]], 'width': [size[0]], 'height': [size[1]], 'category': [categorList]}
+               'bbox_x': [center[0]], 'bbox_y': [center[1]], 'bbox_w': [size[0]], 'bbox_h': [size[1]], 'category': [categorList], 'root_dir': [dir]}
     df = pd.DataFrame.from_dict(new_row)
 
     database = pd.concat([database, df], ignore_index=True)

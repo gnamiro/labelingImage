@@ -136,7 +136,7 @@ class Ui_Dialog(object):
         dialog.setWindowTitle(_translate("dialog", "Retinal Lesion Annotator"))
         dialog.setWindowIcon(QtGui.QIcon(current_directory+'/images/logo.jpg'))
         self.label.setText(_translate("dialog", "Retinal Lesion Annotator"))
-        self.pushButton_3.setText(_translate("dialog", "open folder"))
+        self.pushButton_3.setText(_translate("dialog", "Open folder"))
         self.label_2.setText(_translate("dialog", "Folder content:"))
         self.pushButton_2.setText(_translate("dialog", "save"))
         self.pushButton.setText(_translate("dialog", "delete"))
