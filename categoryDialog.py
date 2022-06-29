@@ -62,7 +62,7 @@ class Ui_Dialog(object):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
         self.pushButton.setText(_translate("Dialog", "save"))
-        self.pushButton_2.setText(_translate("Dialog", "cancel"))
+        self.pushButton_2.setText(_translate("Dialog", "delete"))
         self.pushButton_3.setText(_translate("Dialog", "Add Category to List"))
         self.label.setText(_translate("Dialog", "Enter category name"))
 

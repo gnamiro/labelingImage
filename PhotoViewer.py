@@ -1,5 +1,4 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-import sip
 
 
 class PhotoViewer(QtWidgets.QGraphicsView):

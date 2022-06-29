@@ -138,8 +138,8 @@ class Ui_Dialog(object):
         self.label.setText(_translate("dialog", "Retinal Lesion Annotator"))
         self.pushButton_3.setText(_translate("dialog", "select folder"))
         self.label_2.setText(_translate("dialog", "Folder content:"))
-        self.pushButton_2.setText(_translate("dialog", "ذخیره"))
-        self.pushButton.setText(_translate("dialog", "لغو"))
+        self.pushButton_2.setText(_translate("dialog", "save"))
+        self.pushButton.setText(_translate("dialog", "delete"))
         # self.label_3.setText(_translate("dialog", "TextLabel"))
         # _translate = QtCore.QCoreApplication.translate
         # dialog.setWindowTitle(_translate("dialog", "Retinal Lesion Annotator"))

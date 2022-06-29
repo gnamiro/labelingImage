@@ -13,7 +13,7 @@ import numpy as np
 # TODO: 3. remove all rectangles when changing to other image
 # TODO: 4. define new rectItem to change its color
 
-clickDistanceThreshold = 0.04
+clickDistanceThreshold = 2
 
 database = pd.DataFrame(
     columns=['image_id', 'bbox_id', 'topLeft', 'size', 'category'])
@@ -120,6 +120,7 @@ class RetinalApplication(QtWidgets.QDialog):
             height = self.ui.graphicsView.size().height()
             pixmapRescaled = pixmap.scaled(
                 width, height, QtCore.Qt.KeepAspectRatio)
+
             # item = QtWidgets.QGraphicsPixmapItem(pixmapRescaled)
             # scene.addItem(item)
 
