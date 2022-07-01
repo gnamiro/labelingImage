@@ -10,6 +10,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PhotoViewer import PhotoViewer
 import pathlib
 import os
+import sys
 current_directory = str(pathlib.Path(__file__).parent.absolute())
 
 
