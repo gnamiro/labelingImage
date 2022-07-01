@@ -15,6 +15,7 @@ import numpy as np
 # TODO: 3. remove all rectangles when changing to other image
 # TODO: 4. define new rectItem to change its color
 
+
 clickDistanceThreshold = 2
 
 database = pd.DataFrame(
@@ -53,6 +54,9 @@ class RetinalApplication(QtWidgets.QDialog):
         self.ui = Ui_dialog()
         self.ui.setupUi(self)
 
+        self.chooseDataPath()
+        self.readDataFromDatabase()
+
         self.begin, self.destination = QtCore.QPointF(), QtCore.QPointF()
         self.currentRectTopLeft = QtCore.QPointF()
         self.currentRectSize = QtCore.QSizeF()
@@ -71,6 +75,18 @@ class RetinalApplication(QtWidgets.QDialog):
         self.ui.SaveButton.clicked.connect(self.saveImageData)
         self.ui.DeleteButton.clicked.connect(self.deleteAllInfo)
         self.ui.DataFilePathButton.clicked.connect(self.chooseDataPath)
+
+    def readDataFromDatabase(self):
+        global database
+        print(self.dataFileName)
+        if(self.dataFileName == ''):
+            print("data doesn't exists")
+            self.dataFileName = './data.csv'
+            if not os.path.exists(self.dataFileName):
+                database.to_csv(self.dataFileName)
+
+        database = pd.read_csv(self.dataFileName)
+        print(database)
 
     def refreshScene(self):
         self.ui.graphicsView.removeRects(self.rect_items)
@@ -96,7 +112,9 @@ class RetinalApplication(QtWidgets.QDialog):
                 self.ui.graphicsView._scene.addItem(rect_item)
 
     def chooseDataPath(self):
-        print('choose your data path')
+        self.dataFileName = QtWidgets.QFileDialog.getSaveFileName(
+            self, 'Choose your data file')[0]
+        print(self.dataFileName)
 
     def chooseFolder(self):
         self.dir = QtWidgets.QFileDialog.getExistingDirectory(
@@ -319,7 +337,7 @@ class RetinalApplication(QtWidgets.QDialog):
         return None
 
     def saveImageData(self):
-        database.to_csv('./data/data.csv', index=False)
+        database.to_csv(self.dataFileName, index=False)
         pass
 
         # TODO: 6. Remove data inside dataframe relevent to this picture
@@ -399,8 +417,7 @@ if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
     retianl = RetinalApplication()
-    database = pd.read_csv('./data/data.csv')
-    print(database)
+
     retianl.show()
     # dialog = QtWidgets.QDialog()
     # ui = Ui_dialog()

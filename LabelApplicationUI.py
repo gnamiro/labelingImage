@@ -9,7 +9,19 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PhotoViewer import PhotoViewer
 import pathlib
+import os
 current_directory = str(pathlib.Path(__file__).parent.absolute())
+
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 
 class Ui_dialog(object):
@@ -31,7 +43,8 @@ class Ui_dialog(object):
         self.label_3.setMaximumSize(QtCore.QSize(35, 35))
         self.label_3.setStyleSheet("")
         self.label_3.setText("")
-        self.label_3.setPixmap(QtGui.QPixmap("Images/logo.jpg"))
+        logo_image = resource_path("Images/logo.jpg")
+        self.label_3.setPixmap(QtGui.QPixmap(logo_image))
         self.label_3.setScaledContents(True)
         self.label_3.setAlignment(
             QtCore.Qt.AlignRight | QtCore.Qt.AlignTrailing | QtCore.Qt.AlignVCenter)
@@ -67,7 +80,8 @@ class Ui_dialog(object):
         self.OpenFolderButton.setBaseSize(QtCore.QSize(150, 35))
         self.OpenFolderButton.setStyleSheet("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("Images/OpenFolder.png"),
+        icon_image = resource_path("Images/OpenFolder.png")
+        icon.addPixmap(QtGui.QPixmap(icon_image),
                        QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.OpenFolderButton.setIcon(icon)
         self.OpenFolderButton.setIconSize(QtCore.QSize(37, 24))
@@ -83,7 +97,8 @@ class Ui_dialog(object):
         self.DataFilePathButton.setSizePolicy(sizePolicy)
         self.DataFilePathButton.setMinimumSize(QtCore.QSize(146, 36))
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("Images/dataa.jpg"),
+        icon1_image = resource_path("Images/dataa.jpg")
+        icon1.addPixmap(QtGui.QPixmap(icon1_image),
                         QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.DataFilePathButton.setIcon(icon1)
         self.DataFilePathButton.setIconSize(QtCore.QSize(32, 20))
@@ -101,7 +116,8 @@ class Ui_dialog(object):
         self.SaveButton.setMaximumSize(QtCore.QSize(110, 89))
         self.SaveButton.setStyleSheet("margin-left: ")
         icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap("Images/save1.jpg"),
+        icon2_image = resource_path('Images/save1.jpg')
+        icon2.addPixmap(QtGui.QPixmap(icon2_image),
                         QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.SaveButton.setIcon(icon2)
         self.SaveButton.setIconSize(QtCore.QSize(37, 20))
@@ -122,7 +138,8 @@ class Ui_dialog(object):
         self.DeleteButton.setMinimumSize(QtCore.QSize(135, 36))
         self.DeleteButton.setMaximumSize(QtCore.QSize(100, 23))
         icon3 = QtGui.QIcon()
-        icon3.addPixmap(QtGui.QPixmap("Images/recDel.jpg"),
+        icon3_image = resource_path("Images/recDel.jpg")
+        icon3.addPixmap(QtGui.QPixmap(icon3_image),
                         QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.DeleteButton.setIcon(icon3)
         self.DeleteButton.setIconSize(QtCore.QSize(40, 28))
@@ -195,7 +212,8 @@ class Ui_dialog(object):
 
     def retranslateUi(self, dialog):
         _translate = QtCore.QCoreApplication.translate
-        dialog.setWindowTitle(_translate("dialog", "Dialog"))
+        dialog.setWindowTitle(_translate("dialog", "Retinal Lesion Annotator"))
+        dialog.setWindowIcon(QtGui.QIcon(current_directory+'/images/logo.jpg'))
         self.label.setText(_translate("dialog", "Retinal Lesion Annotator"))
         self.OpenFolderButton.setText(
             _translate("dialog", "Open Image folder"))
