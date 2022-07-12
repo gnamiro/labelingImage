@@ -14,7 +14,8 @@ import numpy as np
 # TODO: 1. import logging
 # TODO: 3. remove all rectangles when changing to other image
 # TODO: 4. define new rectItem to change its color
-
+# TODO: 7*.move dialog to right side of main app
+# TODO: 8*.
 
 clickDistanceThreshold = 2
 

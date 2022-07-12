@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1029</width>
-    <height>841</height>
+    <width>1125</width>
+    <height>810</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -65,6 +65,60 @@
      </item>
     </layout>
    </item>
+   <item row="2" column="0">
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <property name="spacing">
+      <number>18</number>
+     </property>
+     <property name="sizeConstraint">
+      <enum>QLayout::SetFixedSize</enum>
+     </property>
+     <item alignment="Qt::AlignLeft|Qt::AlignTop">
+      <widget class="QLabel" name="label_2">
+       <property name="maximumSize">
+        <size>
+         <width>100</width>
+         <height>20</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">font-weight: 599</string>
+       </property>
+       <property name="text">
+        <string>Folder content:</string>
+       </property>
+      </widget>
+     </item>
+     <item alignment="Qt::AlignHCenter">
+      <widget class="QListWidget" name="listWidget">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>220</width>
+         <height>538</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>256</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="cursor" stdset="0">
+        <cursorShape>PointingHandCursor</cursorShape>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
    <item row="0" column="1">
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <property name="spacing">
@@ -76,7 +130,7 @@
      <item>
       <widget class="QPushButton" name="OpenFolderButton">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
@@ -196,7 +250,7 @@
      <item alignment="Qt::AlignBottom">
       <widget class="QPushButton" name="DeleteButton">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
@@ -243,7 +297,7 @@
      </item>
     </layout>
    </item>
-   <item row="0" column="2">
+   <item row="0" column="4" colspan="2">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <spacer name="horizontalSpacer">
@@ -258,63 +312,28 @@
        </property>
       </spacer>
      </item>
-    </layout>
-   </item>
-   <item row="1" column="0">
-    <layout class="QVBoxLayout" name="verticalLayout_2">
-     <property name="spacing">
-      <number>18</number>
-     </property>
-     <property name="sizeConstraint">
-      <enum>QLayout::SetFixedSize</enum>
-     </property>
-     <item alignment="Qt::AlignLeft|Qt::AlignTop">
-      <widget class="QLabel" name="label_2">
-       <property name="maximumSize">
-        <size>
-         <width>100</width>
-         <height>20</height>
-        </size>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">font-weight: 599</string>
-       </property>
-       <property name="text">
-        <string>Folder content:</string>
-       </property>
-      </widget>
-     </item>
-     <item alignment="Qt::AlignHCenter">
-      <widget class="QListWidget" name="listWidget">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
+     <item>
+      <widget class="QPushButton" name="dragModeButtton">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
        <property name="minimumSize">
         <size>
-         <width>220</width>
-         <height>538</height>
+         <width>104</width>
+         <height>36</height>
         </size>
        </property>
-       <property name="maximumSize">
-        <size>
-         <width>256</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="cursor" stdset="0">
-        <cursorShape>PointingHandCursor</cursorShape>
+       <property name="text">
+        <string>DragMode</string>
        </property>
       </widget>
      </item>
     </layout>
    </item>
-   <item row="2" column="0">
+   <item row="3" column="0">
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
       <widget class="QCheckBox" name="AutoSaveCheckbox">
@@ -334,7 +353,7 @@
      </item>
     </layout>
    </item>
-   <item row="1" column="1" rowspan="2" colspan="2">
+   <item row="2" column="1" rowspan="2" colspan="2">
     <widget class="QGraphicsView" name="graphicsView">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -361,6 +380,86 @@
       <enum>QGraphicsView::NoDrag</enum>
      </property>
     </widget>
+   </item>
+   <item row="1" column="0" colspan="6">
+    <widget class="Line" name="line_5">
+     <property name="midLineWidth">
+      <number>1</number>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="5" rowspan="2">
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Enter category name</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="categoyrEdit"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="addCategoryButton">
+         <property name="text">
+          <string>Add Category to List</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="QListView" name="categoryListView"/>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QPushButton" name="cancelCategoryButton">
+           <property name="text">
+            <string>Cancel</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="saveCategoryButton">
+           <property name="text">
+            <string>Save</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QPushButton" name="completeImageButton">
+         <property name="text">
+          <string>Done</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item row="0" column="2">
+    <spacer name="horizontalSpacer_3">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
    </item>
   </layout>
  </widget>
