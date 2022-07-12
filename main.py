@@ -3,6 +3,7 @@
 from calendar import c
 from cmath import rect
 from genericpath import getsize
+from turtle import width
 from PyQt5 import QtCore, QtGui, QtWidgets
 import os
 from LabelApplicationUI import Ui_dialog
@@ -62,6 +63,7 @@ class RetinalApplication(QtWidgets.QDialog):
         self.currentRectTopLeft = QtCore.QPointF()
         self.currentRectSize = QtCore.QSizeF()
         self.prevSelectedBoundingBox = None
+        self.prevSelectedRectItem = None
 
         self.dialog = CategoryApplication()
 
@@ -108,6 +110,7 @@ class RetinalApplication(QtWidgets.QDialog):
             if not self.currentRectTopLeft.isNull() and not self.currentRectSize.isNull():
                 rect_item = QtWidgets.QGraphicsRectItem(
                     QtCore.QRectF(self.currentRectTopLeft, self.currentRectSize))
+                # rect_item.setPen(QtGui.QPen(QtGui.QColor(255, 0, 0, 255)))
                 rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
                 self.rects.append(rect_item)
                 self.ui.graphicsView._scene.addItem(rect_item)
@@ -214,12 +217,24 @@ class RetinalApplication(QtWidgets.QDialog):
                 boundingBox, index = self.findBoundingBox(pos)
                 if (self.prevSelectedBoundingBox is not None and self.prevSelectedBoundingBox != boundingBox):
                     self.prevSelectedBoundingBox.decrement()
+
+                    if self.prevSelectedRectItem is not None:
+                        self.prevSelectedRectItem.setPen(
+                            QtGui.QPen(QtGui.QColor(0, 0, 0, 255)))
                 if (boundingBox is not None):
+
                     boundingBox.increment()
                     if (boundingBox.stack == 2):
+                        # twice clicked
+                        rect_item = self.findRectItem(
+                            (boundingBox.rectF.x(), boundingBox.rectF.y()), (boundingBox.rectF.size().width(), boundingBox.rectF.size().height()))
+                        rect_item.setPen(
+                            QtGui.QPen(QtGui.QColor(255, 0, 0, 255)))
                         self.openCategoryDialog(
                             boundingBox.rectF.topLeft(), boundingBox.rectF.size(), index)
                         boundingBox.decrement()
+
+                        self.prevSelectedRectItem = rect_item
                     self.prevSelectedBoundingBox = boundingBox
 
             else:
@@ -234,6 +249,7 @@ class RetinalApplication(QtWidgets.QDialog):
             topLeft, rectSize)
         rect_item = QtWidgets.QGraphicsRectItem(rectF)
         rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+
         self.ui.graphicsView._scene.addItem(rect_item)
         self.boundingBoxes.append(BoundingBox(rectF))
         self.rect_items.append(rect_item)
@@ -327,9 +343,11 @@ class RetinalApplication(QtWidgets.QDialog):
         return idx
 
     def findRectItem(self, topLeft, rectSize):
+        print(topLeft, rectSize)
         for rect_item in self.rect_items:
             rectF = rect_item.rect()
-
+            print(rectF.x(), rectF.y(), rectF.size().width(),
+                  rectF.size().height())
             if(rectF.x() == topLeft[0] and rectF.y() == topLeft[1]):
                 rectFSize = rectF.size()
                 if(rectFSize.width() == rectSize[0] and rectFSize.height() == rectSize[1]):
