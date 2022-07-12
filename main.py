@@ -7,6 +7,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 import os
 from LabelApplicationUI import Ui_dialog
 from categoryDialog import CategoryApplication
+from category import CategoryDialog
 
 import pandas as pd
 import numpy as np
@@ -64,6 +65,7 @@ class RetinalApplication(QtWidgets.QDialog):
         self.prevSelectedBoundingBox = None
 
         self.dialog = CategoryApplication()
+        self.categoryDialog = CategoryDialog(self.ui)
 
         # signal connections
         self.ui.OpenFolderButton.clicked.connect(self.chooseFolder)
