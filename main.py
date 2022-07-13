@@ -77,7 +77,7 @@ class RetinalApplication(QtWidgets.QDialog):
         self.prevSelectedBoundingBox = None
         self.prevSelectedRectItem = None
 
-        self.dialog = CategoryApplication()
+        # self.dialog = CategoryApplication()
         self.categoryDialog = CategoryDialog(self.ui, self.model)
 
         # signal connections
@@ -159,7 +159,21 @@ class RetinalApplication(QtWidgets.QDialog):
     def importInsideListWidget(self, images):
         self.ui.listWidget.clear()
         self.ui.listWidget.addItems(images)
+
+        self.highlightFinishedImages()
         print(images)
+
+    def highlightFinishedImages(self):
+
+        for index in range(self.ui.listWidget.count()):
+            idx = self.findImageIndex(
+                self.ui.listWidget.item(index).text(), self.dir)
+            print(idx[0])
+            if idx[0].size > 0:
+                if imageInfoDf.at[idx[0][0], 'status'] == 1:
+                    self.ui.listWidget.item(index).setBackground(
+                        folderListHighlightColour)
+        pass
 
     def showImage(self):
         print(self.ui.listWidget.currentItem().text())

@@ -35,11 +35,12 @@ class CategoryDialog:
 
     def addNewCategory(self):
         newCategory = self.ui.categoyrEdit.text()
-        # print(newCategory)
+        print(self._category)
         if(newCategory != ''):
             if newCategory not in self._category:
                 item = self.createCategoryItem(newCategory)
                 self.model.appendRow(item)
+                self._category.append(newCategory)
         self.ui.categoyrEdit.setText('')
 
     def createCategoryItem(self, categoryName):
@@ -57,8 +58,8 @@ class CategoryDialog:
             # print(item.text())
             if item.text() not in self.info:
                 self.info.append(item.text())
-            if item.text() not in self._category:
-                self._category.append(item.text())
+            # if item.text() not in self._category:
+            #     self._category.append(item.text())
             pass
         else:
             item.setBackground(QtGui.QColor(255, 255, 255))
