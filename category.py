@@ -25,6 +25,7 @@ class CategoryDialog:
             if item not in self._category:
                 checkboxItem = self.createCategoryItem(item)
                 self.model.appendRow(checkboxItem)
+                self._category.append(item)
 
         for index in range(self.model.rowCount()):
             item = self.model.item(index)
