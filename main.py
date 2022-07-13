@@ -14,15 +14,23 @@ import pandas as pd
 import numpy as np
 # from retinal import PhotoViewer
 # TODO: 1. import logging
-# TODO: 3. remove all rectangles when changing to other image
-# TODO: 4. define new rectItem to change its color
-# TODO: 7*.move dialog to right side of main app
 # TODO: 8*.
 
 clickDistanceThreshold = 2
 
 database = pd.DataFrame(
     columns=['image_id', 'bbox_id', 'bbox_x', 'bbox_y', 'bbox_w', 'bbox_h', 'category', 'root_dir'])
+
+imageInfoDf = pd.DataFrame(
+    columns=['image_id', 'image_dir', 'status']
+)
+
+folderListHighlightColour = QtGui.QColor(200, 200, 0, 255)
+whiteColor = QtGui.QColor(255, 255, 255, 255)
+bboxSecondColor = QtGui.QColor(255, 0, 0, 255)
+bboxFirstColor = QtGui.QColor(0, 0, 0, 255)
+
+imageInfoFileName = './imageInfo.csv'
 
 
 class BoundingBox():
@@ -57,6 +65,9 @@ class RetinalApplication(QtWidgets.QDialog):
         self.ui = Ui_dialog()
         self.ui.setupUi(self)
 
+        self.model = QtGui.QStandardItemModel(self)
+        self.ui.categoryListView.setModel(self.model)
+
         self.chooseDataPath()
         self.readDataFromDatabase()
 
@@ -67,7 +78,7 @@ class RetinalApplication(QtWidgets.QDialog):
         self.prevSelectedRectItem = None
 
         self.dialog = CategoryApplication()
-        self.categoryDialog = CategoryDialog(self.ui)
+        self.categoryDialog = CategoryDialog(self.ui, self.model)
 
         # signal connections
         self.ui.OpenFolderButton.clicked.connect(self.chooseFolder)
@@ -75,22 +86,29 @@ class RetinalApplication(QtWidgets.QDialog):
         self.ui.graphicsView.photoClicked.connect(self.photoClicked)
         self.ui.graphicsView.photoReleased.connect(self.photoReleased)
         self.ui.graphicsView.photoMoved.connect(self.photoMoved)
-        self.dialog.dialogStatus.connect(self.handleDialogInfo)
-        self.dialog.sendMessage.connect(self.handleDialogInfo)
+        self.ui.saveCategoryButton.clicked.connect(self.saveDialogInfo)
+        self.ui.cancelCategoryButton.clicked.connect(self.deleteDialogInfo)
+        self.ui.completeImageButton.clicked.connect(self.toggleImageCompletion)
         self.ui.SaveButton.clicked.connect(self.saveImageData)
         self.ui.DeleteButton.clicked.connect(self.deleteAllInfo)
         self.ui.DataFilePathButton.clicked.connect(self.chooseDataPath)
 
     def readDataFromDatabase(self):
-        global database
+        global database, imageInfoDf, imageInfoFileName
         print(self.dataFileName)
         if(self.dataFileName == ''):
             print("data doesn't exists")
             self.dataFileName = './data.csv'
             if not os.path.exists(self.dataFileName):
-                database.to_csv(self.dataFileName)
+                database.to_csv(self.dataFileName, index=False)
 
         database = pd.read_csv(self.dataFileName)
+
+        if not os.path.exists(imageInfoFileName):
+            imageInfoDf.to_csv(imageInfoFileName, index=False)
+        else:
+            imageInfoDf = pd.read_csv(imageInfoFileName)
+
         print(database)
 
     def refreshScene(self):
@@ -146,6 +164,7 @@ class RetinalApplication(QtWidgets.QDialog):
     def showImage(self):
         print(self.ui.listWidget.currentItem().text())
         imagePath = self.dir + '/' + self.ui.listWidget.currentItem().text()
+
         if(os.path.isfile(imagePath)):
             # scene = QtWidgets.QGraphicsScene(self)
             pixmap = QtGui.QPixmap(imagePath)
@@ -167,6 +186,26 @@ class RetinalApplication(QtWidgets.QDialog):
         else:
             print(imagePath)
         pass
+
+    # TODO 7. Add to dataframe, highligh
+    def toggleImageCompletion(self):
+        global imageInfoDf, imageInfoFileName
+        currentImage = self.ui.listWidget.currentItem()
+        idx = self.findImageIndex(currentImage.text(), self.dir)
+        print(idx)
+        if idx[0].size > 0:
+            if imageInfoDf.at[idx[0][0], 'status'] == 0:
+                currentImage.setBackground(folderListHighlightColour)
+                imageInfoDf.at[idx[0][0], 'status'] = 1
+            else:
+                currentImage.setBackground(whiteColor)
+                imageInfoDf.at[idx[0][0], 'status'] = 0
+        else:
+            appendToImageInfo(currentImage.text(), self.dir, 1)
+            currentImage.setBackground(folderListHighlightColour)
+
+        print(imageInfoDf)
+        imageInfoDf.to_csv(imageInfoFileName, index=False)
 
     def loadImageBboxes(self):
         self.rect_items = []
@@ -194,8 +233,6 @@ class RetinalApplication(QtWidgets.QDialog):
             # print(self.begin)
             self.update()
 
-            # print('%d, %d' % (pos.x(), pos.y()))
-
     def photoMoved(self, pos):
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
             self.currentRectTopLeft = getTopLeftOfRect(self.begin, pos)
@@ -213,8 +250,7 @@ class RetinalApplication(QtWidgets.QDialog):
             self.currentRectSize = getSizeOfRect(self.begin, pos)
             distance = (self.currentRectSize.width() ** 2 +
                         self.currentRectSize.height() ** 2) ** 0.5
-            # self.begin, pos = standardizeRectangle(self.begin, pos)
-            # if checkRectCoordinates(self.begin, pos):
+
             if (self.isItClick(distance)):
                 boundingBox, index = self.findBoundingBox(pos)
                 if (self.prevSelectedBoundingBox is not None and self.prevSelectedBoundingBox != boundingBox):
@@ -222,7 +258,7 @@ class RetinalApplication(QtWidgets.QDialog):
 
                     if self.prevSelectedRectItem is not None:
                         self.prevSelectedRectItem.setPen(
-                            QtGui.QPen(QtGui.QColor(0, 0, 0, 255)))
+                            QtGui.QPen(bboxFirstColor))
                 if (boundingBox is not None):
 
                     boundingBox.increment()
@@ -231,9 +267,10 @@ class RetinalApplication(QtWidgets.QDialog):
                         rect_item = self.findRectItem(
                             (boundingBox.rectF.x(), boundingBox.rectF.y()), (boundingBox.rectF.size().width(), boundingBox.rectF.size().height()))
                         rect_item.setPen(
-                            QtGui.QPen(QtGui.QColor(255, 0, 0, 255)))
+                            QtGui.QPen(bboxSecondColor))
                         self.openCategoryDialog(
                             boundingBox.rectF.topLeft(), boundingBox.rectF.size(), index)
+
                         boundingBox.decrement()
 
                         self.prevSelectedRectItem = rect_item
@@ -242,9 +279,6 @@ class RetinalApplication(QtWidgets.QDialog):
             else:
                 self.createQrectItem(
                     self.currentRectTopLeft, self.currentRectSize)
-
-            # self.update()
-            # self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
 
     def createQrectItem(self, topLeft, rectSize):
         rectF = QtCore.QRectF(
@@ -255,7 +289,6 @@ class RetinalApplication(QtWidgets.QDialog):
         self.ui.graphicsView._scene.addItem(rect_item)
         self.boundingBoxes.append(BoundingBox(rectF))
         self.rect_items.append(rect_item)
-        pass
 
     def isItClick(self, distance):
         if (distance < clickDistanceThreshold):
@@ -282,20 +315,21 @@ class RetinalApplication(QtWidgets.QDialog):
         currentPic = self.ui.listWidget.currentItem().text()
 
         bboxId = '-'.join(str(e) for e in topLeft + rectSize)
-        self.dialog.set_cords(beginCord, size, boundingBoxIndex)
+        self.categoryDialog.set_cords(beginCord, size, boundingBoxIndex)
 
         idx = self.findSelectedBbox(currentPic, bboxId)
 
         if(idx[0].size > 0):
-            self.dialog.load_data(database.at[idx[0][0], 'category'])
+            self.categoryDialog.load_data(database.at[idx[0][0], 'category'])
         else:
-            self.dialog.uncheckItems()
+            self.categoryDialog.uncheckItems()
 
-        self.dialog.exec_()
-
-    def handleDialogInfo(self, status, index, info, beginPos, size):
+    def saveDialogInfo(self):
         global database
-        # TODO: 5. improve beginPos
+        index, info, cords = self.categoryDialog.saveInfo()
+        beginPos = cords[0]
+        size = cords[1]
+
         topLeftRate, rectSizeRate = [round(beginPos.x()/self.xSize, 14), round(beginPos.y()/self.ySize, 14)], [
             round(size.width()/self.xSize, 14), round(size.height()/self.ySize, 14)]
 
@@ -303,7 +337,7 @@ class RetinalApplication(QtWidgets.QDialog):
 
         bboxId = '-'.join(str(e) for e in topLeftRate + rectSizeRate)
 
-        if status and (info != ''):
+        if info != '':
             topLeft, rectSize = [beginPos.x()/self.xSize, beginPos.y()/self.ySize], [
                 size.width()/self.xSize, size.height()/self.ySize]
             # infoList = info.split(',')
@@ -319,28 +353,57 @@ class RetinalApplication(QtWidgets.QDialog):
             if(self.isAutoSave()):
                 self.saveImageData()
             print(database)
-            pass
-        else:
-            topLeft, rectSize = [beginPos.x(), beginPos.y()], [
-                size.width(), size.height()]
-            boundingBox = self.findRectItem(topLeft, rectSize)
-            if boundingBox != None:
-                self.rect_items.remove(boundingBox)
-                del self.boundingBoxes[index]
-                # print(len(self.rect_items))
-                self.ui.graphicsView.removeRect(boundingBox)
-                idx = self.findSelectedBbox(currentPic, bboxId)
 
-                if idx[0].size > 0:
-                    database = database.drop(idx[0][0])
-                    database = database.reset_index(drop=True)
-            else:
-                print('not founded')
+            rect_item = self.findRectItem(
+                (beginPos.x(), beginPos.y()), (size.width(), size.height()))
+            rect_item.setPen(
+                QtGui.QPen(bboxFirstColor))
+        else:
+            self.deleteInfo(index, cords)
+
+    def deleteDialogInfo(self):
+        index, cords = self.categoryDialog.deleteInfo()
+        self.deleteInfo(index, cords)
+
+    def deleteInfo(self, index, cords):
+        global database
+        beginPos = cords[0]
+        size = cords[1]
+
+        topLeftRate, rectSizeRate = [round(beginPos.x()/self.xSize, 14), round(beginPos.y()/self.ySize, 14)], [
+            round(size.width()/self.xSize, 14), round(size.height()/self.ySize, 14)]
+
+        currentPic = self.ui.listWidget.currentItem().text()
+
+        bboxId = '-'.join(str(e) for e in topLeftRate + rectSizeRate)
+
+        topLeft, rectSize = [beginPos.x(), beginPos.y()], [
+            size.width(), size.height()]
+        boundingBox = self.findRectItem(topLeft, rectSize)
+
+        if boundingBox != None:
+            self.rect_items.remove(boundingBox)
+            del self.boundingBoxes[index]
+            # print(len(self.rect_items))
+            self.ui.graphicsView.removeRect(boundingBox)
+            idx = self.findSelectedBbox(currentPic, bboxId)
+
+            if idx[0].size > 0:
+                database = database.drop(idx[0][0])
+                database = database.reset_index(drop=True)
+        else:
+            print('not founded')
 
     def findSelectedBbox(self, imageId, bboxId):
         global database
         idx = np.where((database['image_id'] ==
                         imageId) & (database['bbox_id'] == bboxId))
+
+        return idx
+
+    def findImageIndex(self, imageName, imageDir):
+        global imageInfoDf
+        idx = np.where((imageInfoDf['image_id'] == imageName))
 
         return idx
 
@@ -364,11 +427,24 @@ class RetinalApplication(QtWidgets.QDialog):
         # TODO: 6. Remove data inside dataframe relevent to this picture
     def deleteAllInfo(self):
         deleteDataReleventToImage(self.ui.listWidget.currentItem().text())
+        self.deleteImageStatus()
 
         if(self.isAutoSave()):
             self.saveImageData()
 
         self.refreshScene()
+
+    def deleteImageStatus(self):
+        global imageInfoDf, imageInfoFileName
+
+        idx = self.findImageIndex(self.ui.listWidget.currentItem().text(), '')
+        if idx[0].size > 0:
+            imageInfoDf.drop(idx[0], axis=0, inplace=True)
+            imageInfoDf = imageInfoDf.reset_index(drop=True)
+            self.ui.listWidget.currentItem().setBackground(whiteColor)
+            imageInfoDf.to_csv(imageInfoFileName, index=False)
+
+        print(imageInfoDf)
 
     def isAutoSave(self):
         return self.ui.AutoSaveCheckbox.isChecked()
@@ -393,7 +469,15 @@ def appendToDatabase(imageId, bboxId, center, size, categorList, dir):
     df = pd.DataFrame.from_dict(new_row)
 
     database = pd.concat([database, df], ignore_index=True)
-    # database.reset_index(drop=True)
+
+
+def appendToImageInfo(imageName, dir, status):
+    global imageInfoDf
+    new_row = {'image_id': [imageName],
+               'image_dir': [dir], 'status': [status]}
+    df = pd.DataFrame.from_dict(new_row)
+
+    imageInfoDf = pd.concat([imageInfoDf, df], ignore_index=True)
 
 
 def calculateRectFeatures(startPos, endPos):
