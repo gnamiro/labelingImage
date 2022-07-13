@@ -189,19 +189,16 @@ class RetinalApplication(QtWidgets.QDialog):
 
             self.xSize = pixmapRescaled.size().width()
             self.ySize = pixmapRescaled.size().height()
-            # item = QtWidgets.QGraphicsPixmapItem(pixmapRescaled)
-            # scene.addItem(item)
 
             self.refreshScene()
             self.ui.graphicsView.setPhoto(pixmapRescaled)
 
             self.loadImageBboxes()
-            # database[self.ui.listWidget.currentItem().text()] = []
+
         else:
             print(imagePath)
         pass
 
-    # TODO 7. Add to dataframe, highligh
     def toggleImageCompletion(self):
         global imageInfoDf, imageInfoFileName
         currentImage = self.ui.listWidget.currentItem()
@@ -226,9 +223,7 @@ class RetinalApplication(QtWidgets.QDialog):
         currentPic = self.ui.listWidget.currentItem().text()
         dataReleventToImage = database.loc[database['image_id'].isin([
                                                                      currentPic])]
-        # print(dataReleventToImage)
         for index, row in dataReleventToImage.iterrows():
-            # print(row['topLeft'], row['size'])
             topLeftdim = [float(row['bbox_x']*self.xSize),
                           float(row['bbox_y']*self.ySize)]
             rectSizedim = [float(row['bbox_w'])*self.xSize,
@@ -251,8 +246,7 @@ class RetinalApplication(QtWidgets.QDialog):
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
             self.currentRectTopLeft = getTopLeftOfRect(self.begin, pos)
             self.currentRectSize = getSizeOfRect(self.begin, pos)
-            # self.ui.graphicsView.items().clear()
-            # print(self.destination)
+
             self.ui.graphicsView.removeRects(self.rects[:-1])
 
             self.update()
