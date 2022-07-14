@@ -19,6 +19,8 @@ class GraphicsRectItem(QGraphicsRectItem):
     handleSize = +8.0
     handleSpace = -4.0
 
+    rectThreshold = +24.0
+
     handleCursors = {
         handleTopLeft: Qt.SizeFDiagCursor,
         handleTopMiddle: Qt.SizeVerCursor,
@@ -42,6 +44,19 @@ class GraphicsRectItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
         self.setFlag(QGraphicsItem.ItemIsFocusable, True)
+        self.selected = 1
+
+        self.handleRectSizeThreshold = {
+            self.handleTopLeft: self.TL,
+            self.handleTopMiddle: self.TM,
+            self.handleTopRight: self.TR,
+            self.handleMiddleLeft: self.ML,
+            self.handleMiddleRight: self.MR,
+            self.handleBottomLeft: self.BL,
+            self.handleBottomMiddle: self.BM,
+            self.handleBottomRight: self.BR,
+        }
+
         self.updateHandlesPos()
 
     def handleAt(self, point):
@@ -138,8 +153,9 @@ class GraphicsRectItem(QGraphicsRectItem):
             diff.setY(toY - fromY)
             boundingRect.setLeft(toX)
             boundingRect.setTop(toY)
-            rect.setLeft(boundingRect.left() + offset)
-            rect.setTop(boundingRect.top() + offset)
+
+            rect = self.handleRectSizeThreshold[self.handleTopLeft](
+                boundingRect, rect, offset)
             self.setRect(rect)
 
         elif self.handleSelected == self.handleTopMiddle:
@@ -148,7 +164,9 @@ class GraphicsRectItem(QGraphicsRectItem):
             toY = fromY + mousePos.y() - self.mousePressPos.y()
             diff.setY(toY - fromY)
             boundingRect.setTop(toY)
-            rect.setTop(boundingRect.top() + offset)
+
+            rect = self.handleRectSizeThreshold[self.handleTopMiddle](
+                boundingRect, rect, offset)
             self.setRect(rect)
 
         elif self.handleSelected == self.handleTopRight:
@@ -161,8 +179,9 @@ class GraphicsRectItem(QGraphicsRectItem):
             diff.setY(toY - fromY)
             boundingRect.setRight(toX)
             boundingRect.setTop(toY)
-            rect.setRight(boundingRect.right() - offset)
-            rect.setTop(boundingRect.top() + offset)
+
+            rect = self.handleRectSizeThreshold[self.handleTopRight](
+                boundingRect, rect, offset)
             self.setRect(rect)
 
         elif self.handleSelected == self.handleMiddleLeft:
@@ -171,7 +190,9 @@ class GraphicsRectItem(QGraphicsRectItem):
             toX = fromX + mousePos.x() - self.mousePressPos.x()
             diff.setX(toX - fromX)
             boundingRect.setLeft(toX)
-            rect.setLeft(boundingRect.left() + offset)
+
+            rect = self.handleRectSizeThreshold[self.handleMiddleLeft](
+                boundingRect, rect, offset)
             self.setRect(rect)
 
         elif self.handleSelected == self.handleMiddleRight:
@@ -179,7 +200,9 @@ class GraphicsRectItem(QGraphicsRectItem):
             toX = fromX + mousePos.x() - self.mousePressPos.x()
             diff.setX(toX - fromX)
             boundingRect.setRight(toX)
-            rect.setRight(boundingRect.right() - offset)
+
+            rect = self.handleRectSizeThreshold[self.handleMiddleRight](
+                boundingRect, rect, offset)
             self.setRect(rect)
 
         elif self.handleSelected == self.handleBottomLeft:
@@ -192,8 +215,9 @@ class GraphicsRectItem(QGraphicsRectItem):
             diff.setY(toY - fromY)
             boundingRect.setLeft(toX)
             boundingRect.setBottom(toY)
-            rect.setLeft(boundingRect.left() + offset)
-            rect.setBottom(boundingRect.bottom() - offset)
+
+            rect = self.handleRectSizeThreshold[self.handleBottomLeft](
+                boundingRect, rect, offset)
             self.setRect(rect)
 
         elif self.handleSelected == self.handleBottomMiddle:
@@ -202,7 +226,9 @@ class GraphicsRectItem(QGraphicsRectItem):
             toY = fromY + mousePos.y() - self.mousePressPos.y()
             diff.setY(toY - fromY)
             boundingRect.setBottom(toY)
-            rect.setBottom(boundingRect.bottom() - offset)
+
+            rect = self.handleRectSizeThreshold[self.handleBottomMiddle](
+                boundingRect, rect, offset)
             self.setRect(rect)
 
         elif self.handleSelected == self.handleBottomRight:
@@ -215,11 +241,101 @@ class GraphicsRectItem(QGraphicsRectItem):
             diff.setY(toY - fromY)
             boundingRect.setRight(toX)
             boundingRect.setBottom(toY)
-            rect.setRight(boundingRect.right() - offset)
-            rect.setBottom(boundingRect.bottom() - offset)
+
+            rect = self.handleRectSizeThreshold[self.handleBottomRight](
+                boundingRect, rect, offset)
             self.setRect(rect)
 
         self.updateHandlesPos()
+
+    def checkPos2Pos(fromPos, toPos):
+        pass
+
+    def TL(self, boundingRect, rect, offset):
+        # offset = self.handleSize + self.handleSpace
+        if boundingRect.right() - boundingRect.left() > self.rectThreshold:
+            rect.setLeft(boundingRect.left() + offset)
+        else:
+            rect.setLeft(boundingRect.right() - self.rectThreshold)
+
+        if boundingRect.bottom() - boundingRect.top() > self.rectThreshold:
+            rect.setTop(boundingRect.top() + offset)
+        else:
+            rect.setTop(boundingRect.bottom() - self.rectThreshold)
+
+        return rect
+
+    def TM(self, boundingRect, rect, offset):
+        if boundingRect.bottom() - boundingRect.top() > self.rectThreshold:
+            rect.setTop(boundingRect.top() + offset)
+        else:
+            rect.setTop(boundingRect.bottom() - self.rectThreshold)
+
+        return rect
+
+    def TR(self, boundingRect, rect, offset):
+        # offset = self.handleSize + self.handleSpace
+        if boundingRect.right() - boundingRect.left() > self.rectThreshold:
+            rect.setRight(boundingRect.right() - offset)
+        else:
+            rect.setRight(boundingRect.left() + self.rectThreshold)
+
+        if boundingRect.bottom() - boundingRect.top() > self.rectThreshold:
+            rect.setTop(boundingRect.top() + offset)
+        else:
+            rect.setTop(boundingRect.bottom() - self.rectThreshold)
+
+        return rect
+
+    def ML(self, boundingRect, rect, offset):
+        if boundingRect.right() - boundingRect.left() > self.rectThreshold:
+            rect.setLeft(boundingRect.left() + offset)
+        else:
+            rect.setLeft(boundingRect.right() - self.rectThreshold)
+
+        return rect
+
+    def MR(self, boundingRect, rect, offset):
+        if boundingRect.right() - boundingRect.left() > self.rectThreshold:
+            rect.setRight(boundingRect.right() - offset)
+        else:
+            rect.setRight(boundingRect.left() + self.rectThreshold)
+
+        return rect
+
+    def BL(self, boundingRect, rect, offset):
+        if boundingRect.right() - boundingRect.left() > self.rectThreshold:
+            rect.setLeft(boundingRect.left() + offset)
+        else:
+            rect.setLeft(boundingRect.right() - self.rectThreshold)
+
+        if boundingRect.bottom() - boundingRect.top() > self.rectThreshold:
+            rect.setBottom(boundingRect.bottom() - offset)
+        else:
+            rect.setBottom(boundingRect.top() + self.rectThreshold)
+
+        return rect
+
+    def BM(self, boundingRect, rect, offset):
+        if boundingRect.bottom() - boundingRect.top() > self.rectThreshold:
+            rect.setBottom(boundingRect.bottom() - offset)
+        else:
+            rect.setBottom(boundingRect.top() + self.rectThreshold)
+
+        return rect
+
+    def BR(self, boundingRect, rect, offset):
+        if boundingRect.right() - boundingRect.left() > self.rectThreshold:
+            rect.setRight(boundingRect.right() - offset)
+        else:
+            rect.setRight(boundingRect.left() + self.rectThreshold)
+
+        if boundingRect.bottom() - boundingRect.top() > self.rectThreshold:
+            rect.setBottom(boundingRect.bottom() - offset)
+        else:
+            rect.setBottom(boundingRect.top() + self.rectThreshold)
+
+        return rect
 
     def shape(self):
         # Returns the shape of this item as a QPainterPath in local coordinates.
@@ -242,9 +358,10 @@ class GraphicsRectItem(QGraphicsRectItem):
         painter.setBrush(QBrush(QColor(255, 0, 0, 255)))
         painter.setPen(QPen(QColor(0, 0, 0, 255), 1.0,
                        Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-        for handle, rect in self.handles.items():
-            if self.handleSelected is None or handle == self.handleSelected:
-                painter.drawEllipse(rect)
+        if self.selected == 1:
+            for handle, rect in self.handles.items():
+                if self.handleSelected is None or handle == self.handleSelected:
+                    painter.drawEllipse(rect)
 
 
 def main():
@@ -255,7 +372,6 @@ def main():
     scene = QGraphicsScene()
     scene.setSceneRect(0, 0, 680, 459)
 
-    scene.addPixmap(QPixmap('01.png'))
     grview.setScene(scene)
 
     item = GraphicsRectItem(0, 0, 300, 150)
