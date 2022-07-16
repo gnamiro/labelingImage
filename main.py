@@ -9,6 +9,7 @@ import os
 from LabelApplicationUI import Ui_dialog
 from categoryDialog import CategoryApplication
 from category import CategoryDialog
+from temp import GraphicsRectItem
 
 import pandas as pd
 import numpy as np
@@ -77,8 +78,13 @@ class RetinalApplication(QtWidgets.QDialog):
         self.prevSelectedBoundingBox = None
         self.prevSelectedRectItem = None
 
+        self.selectedRect = None
+        self.selecting = 0
+
         # self.dialog = CategoryApplication()
         self.categoryDialog = CategoryDialog(self.ui, self.model)
+
+        self.ui.graphicsView.show()
 
         # signal connections
         self.ui.OpenFolderButton.clicked.connect(self.chooseFolder)
@@ -92,6 +98,7 @@ class RetinalApplication(QtWidgets.QDialog):
         self.ui.SaveButton.clicked.connect(self.saveImageData)
         self.ui.DeleteButton.clicked.connect(self.deleteAllInfo)
         self.ui.DataFilePathButton.clicked.connect(self.chooseDataPath)
+        self.ui.dragModeButtton.clicked.connect(self.toggleDragMode)
 
     def readDataFromDatabase(self):
         global database, imageInfoDf, imageInfoFileName
@@ -128,7 +135,7 @@ class RetinalApplication(QtWidgets.QDialog):
 
         if(self.ui.graphicsView.hasPhoto()):
             if not self.currentRectTopLeft.isNull() and not self.currentRectSize.isNull():
-                rect_item = QtWidgets.QGraphicsRectItem(
+                rect_item = GraphicsRectItem(
                     QtCore.QRectF(self.currentRectTopLeft, self.currentRectSize))
                 # rect_item.setPen(QtGui.QPen(QtGui.QColor(255, 0, 0, 255)))
                 rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
@@ -141,6 +148,7 @@ class RetinalApplication(QtWidgets.QDialog):
         print(self.dataFileName)
 
     def chooseFolder(self):
+        # TODO: os.path.join
         self.dir = QtWidgets.QFileDialog.getExistingDirectory(
             None, 'Select a folder:', 'C:\\', QtWidgets.QFileDialog.ShowDirsOnly)
         if self.dir != '':
@@ -168,7 +176,7 @@ class RetinalApplication(QtWidgets.QDialog):
         for index in range(self.ui.listWidget.count()):
             idx = self.findImageIndex(
                 self.ui.listWidget.item(index).text(), self.dir)
-            print(idx[0])
+            # print(idx[0])
             if idx[0].size > 0:
                 if imageInfoDf.at[idx[0][0], 'status'] == 1:
                     self.ui.listWidget.item(index).setBackground(
@@ -237,8 +245,8 @@ class RetinalApplication(QtWidgets.QDialog):
             pass
 
     def photoClicked(self, pos):
+        self.begin = pos
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
-            self.begin = pos
             # print(self.begin)
             self.update()
 
@@ -276,6 +284,8 @@ class RetinalApplication(QtWidgets.QDialog):
                             (boundingBox.rectF.x(), boundingBox.rectF.y()), (boundingBox.rectF.size().width(), boundingBox.rectF.size().height()))
                         rect_item.setPen(
                             QtGui.QPen(bboxSecondColor))
+
+                        self.selectedRect = rect_item
                         self.openCategoryDialog(
                             boundingBox.rectF.topLeft(), boundingBox.rectF.size(), index)
 
@@ -287,15 +297,18 @@ class RetinalApplication(QtWidgets.QDialog):
             else:
                 self.createQrectItem(
                     self.currentRectTopLeft, self.currentRectSize)
+        if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.ScrollHandDrag:
+            print('ok')
 
     def createQrectItem(self, topLeft, rectSize):
         rectF = QtCore.QRectF(
             topLeft, rectSize)
-        rect_item = QtWidgets.QGraphicsRectItem(rectF)
+        rect_item = GraphicsRectItem(rectF)
         rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
 
         self.ui.graphicsView._scene.addItem(rect_item)
         self.boundingBoxes.append(BoundingBox(rectF))
+        self.selectedRect = rect_item
         self.rect_items.append(rect_item)
 
     def isItClick(self, distance):
@@ -316,6 +329,10 @@ class RetinalApplication(QtWidgets.QDialog):
                     minimumBoundedBox = boundingBox
                     minimumBoundedBoxIndex = index
         return minimumBoundedBox, minimumBoundedBoxIndex
+
+    def toggleDragMode(self):
+        self.selecting = 1
+        self.ui.graphicsView.toggleDragMode()
 
     def openCategoryDialog(self, beginCord, size, boundingBoxIndex):
         topLeft, rectSize = [round(beginCord.x()/self.xSize, 14), round(beginCord.y()/self.ySize, 14)], [

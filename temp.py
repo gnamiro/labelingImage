@@ -66,6 +66,7 @@ class GraphicsRectItem(QGraphicsRectItem):
         return None
 
     def hoverMoveEvent(self, moveEvent):
+        # print('69heelo')
         # Executed when the mouse moves over the shape (NOT PRESSED).
 
         if self.isSelected():
@@ -75,6 +76,7 @@ class GraphicsRectItem(QGraphicsRectItem):
         super().hoverMoveEvent(moveEvent)
 
     def hoverLeaveEvent(self, moveEvent):
+        # print('79heelo')
         # Executed when the mouse leaves the shape (NOT PRESSED).
 
         self.setCursor(Qt.ArrowCursor)
@@ -83,6 +85,7 @@ class GraphicsRectItem(QGraphicsRectItem):
     def mousePressEvent(self, mouseEvent):
         # Executed when the mouse is pressed on the item.
 
+        print('88heelo')
         self.handleSelected = self.handleAt(mouseEvent.pos())
         if self.handleSelected:
             self.mousePressPos = mouseEvent.pos()
@@ -92,6 +95,7 @@ class GraphicsRectItem(QGraphicsRectItem):
     def mouseMoveEvent(self, mouseEvent):
         # Executed when the mouse is being moved over the item while being pressed.
 
+        # print('98heelo')
         if self.handleSelected is not None:
             self.interactiveResize(mouseEvent.pos())
         else:
@@ -101,6 +105,7 @@ class GraphicsRectItem(QGraphicsRectItem):
         # Executed when the mouse is released from the item.
 
         super().mouseReleaseEvent(mouseEvent)
+        print('108heelo')
         self.handleSelected = None
         self.mousePressPos = None
         self.mousePressRect = None
@@ -116,7 +121,9 @@ class GraphicsRectItem(QGraphicsRectItem):
         # Update current resize handles according to the shape size and position.
 
         s = self.handleSize
+        print(s)
         b = self.boundingRect()
+        print(b.left(), b.top())
         self.handles[self.handleTopLeft] = QRectF(b.left(), b.top(), s, s)
         self.handles[self.handleTopMiddle] = QRectF(
             b.center().x() - s / 2, b.top(), s, s)
@@ -350,7 +357,7 @@ class GraphicsRectItem(QGraphicsRectItem):
     def paint(self, painter, option, widget=None):
         # Paint the node in the graphic view.
 
-        painter.setBrush(QBrush(QColor(255, 0, 0, 100)))
+        # painter.setBrush(QBrush(QColor(255, 255, 255, 255)))
         painter.setPen(QPen(QColor(0, 0, 0), 1.0, Qt.SolidLine))
         painter.drawRect(self.rect())
 
@@ -369,12 +376,16 @@ def main():
     app = QApplication(sys.argv)
 
     grview = QGraphicsView()
+    grview.setDragMode(QGraphicsView.ScrollHandDrag)
     scene = QGraphicsScene()
     scene.setSceneRect(0, 0, 680, 459)
 
     grview.setScene(scene)
 
     item = GraphicsRectItem(0, 0, 300, 150)
+    scene.addItem(item)
+
+    item = GraphicsRectItem(400, 200, 100, 150)
     scene.addItem(item)
 
     grview.fitInView(scene.sceneRect(), Qt.KeepAspectRatio)
