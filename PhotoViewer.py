@@ -42,7 +42,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self._photo.isUnderMouse() and (event.buttons() & QtCore.Qt.LeftButton):
+        if self.dragMode() == QtWidgets.QGraphicsView.NoDrag and self._photo.isUnderMouse() and (event.buttons() & QtCore.Qt.LeftButton):
             self.destination = event.pos()
 
             self.photoMoved.emit(
@@ -54,7 +54,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
 
     def mouseReleaseEvent(self, event):
         super().mouseReleaseEvent(event)
-        if self._photo.isUnderMouse() and (event.button() & QtCore.Qt.LeftButton):
+        if self.dragMode() == QtWidgets.QGraphicsView.NoDrag and self._photo.isUnderMouse() and (event.button() & QtCore.Qt.LeftButton):
             self.destination = event.pos()
             self.photoReleased.emit(
                 self.mapToScene(self.destination))

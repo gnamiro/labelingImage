@@ -137,10 +137,13 @@ class RetinalApplication(QtWidgets.QDialog):
             if not self.currentRectTopLeft.isNull() and not self.currentRectSize.isNull():
                 rect_item = GraphicsRectItem(
                     QtCore.QRectF(self.currentRectTopLeft, self.currentRectSize))
-                # rect_item.setPen(QtGui.QPen(QtGui.QColor(255, 0, 0, 255)))
-                rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+
                 self.rects.append(rect_item)
+                # if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
                 self.ui.graphicsView._scene.addItem(rect_item)
+
+                self.currentRectTopLeft = QtCore.QPointF()
+                self.currentRectSize = QtCore.QSizeF()
 
     def chooseDataPath(self):
         self.dataFileName = QtWidgets.QFileDialog.getSaveFileName(
@@ -251,22 +254,22 @@ class RetinalApplication(QtWidgets.QDialog):
             self.update()
 
     def photoMoved(self, pos):
+        self.ui.graphicsView.removeRects(self.rects[:-1])
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
             self.currentRectTopLeft = getTopLeftOfRect(self.begin, pos)
             self.currentRectSize = getSizeOfRect(self.begin, pos)
-
-            self.ui.graphicsView.removeRects(self.rects[:-1])
 
             self.update()
 
     def photoReleased(self, pos):
-        if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
-            self.ui.graphicsView.removeRects(self.rects)
-            self.currentRectTopLeft = getTopLeftOfRect(self.begin, pos)
-            self.currentRectSize = getSizeOfRect(self.begin, pos)
-            distance = (self.currentRectSize.width() ** 2 +
-                        self.currentRectSize.height() ** 2) ** 0.5
+        self.ui.graphicsView.removeRects(self.rects)
+        self.rects = []
+        self.currentRectTopLeft = getTopLeftOfRect(self.begin, pos)
+        self.currentRectSize = getSizeOfRect(self.begin, pos)
+        distance = (self.currentRectSize.width() ** 2 +
+                    self.currentRectSize.height() ** 2) ** 0.5
 
+        if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
             if (self.isItClick(distance)):
                 boundingBox, index = self.findBoundingBox(pos)
                 if (self.prevSelectedBoundingBox is not None and self.prevSelectedBoundingBox != boundingBox):
@@ -297,19 +300,23 @@ class RetinalApplication(QtWidgets.QDialog):
             else:
                 self.createQrectItem(
                     self.currentRectTopLeft, self.currentRectSize)
+
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.ScrollHandDrag:
             print('ok')
+
+        print(self.rect_items)
 
     def createQrectItem(self, topLeft, rectSize):
         rectF = QtCore.QRectF(
             topLeft, rectSize)
         rect_item = GraphicsRectItem(rectF)
-        rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
 
         self.ui.graphicsView._scene.addItem(rect_item)
         self.boundingBoxes.append(BoundingBox(rectF))
         self.selectedRect = rect_item
         self.rect_items.append(rect_item)
+        self.currentRectTopLeft = QtCore.QPointF()
+        self.currentRectSize = QtCore.QSizeF()
 
     def isItClick(self, distance):
         if (distance < clickDistanceThreshold):
@@ -331,8 +338,17 @@ class RetinalApplication(QtWidgets.QDialog):
         return minimumBoundedBox, minimumBoundedBoxIndex
 
     def toggleDragMode(self):
-        self.selecting = 1
+        self.selecting = not self.selecting
         self.ui.graphicsView.toggleDragMode()
+
+        if self.selecting:
+            self.ui.dragModeButtton.setStyleSheet(
+                'background-color: green; color: white')
+            self.ui.dragModeButtton.setText('DrawMode')
+        else:
+            self.ui.dragModeButtton.setStyleSheet(
+                'background-color: rgba(225,225,225,255); border: 1px solid rgba(250,250,250,255)')
+            self.ui.dragModeButtton.setText('DragMode')
 
     def openCategoryDialog(self, beginCord, size, boundingBoxIndex):
         topLeft, rectSize = [round(beginCord.x()/self.xSize, 14), round(beginCord.y()/self.ySize, 14)], [
