@@ -85,7 +85,6 @@ class GraphicsRectItem(QGraphicsRectItem):
     def mousePressEvent(self, mouseEvent):
         # Executed when the mouse is pressed on the item.
 
-        print('88heelo')
         self.handleSelected = self.handleAt(mouseEvent.pos())
         if self.handleSelected:
             self.mousePressPos = mouseEvent.pos()
@@ -105,7 +104,7 @@ class GraphicsRectItem(QGraphicsRectItem):
         # Executed when the mouse is released from the item.
 
         super().mouseReleaseEvent(mouseEvent)
-        print('108heelo')
+        # print('108heelo')
         self.handleSelected = None
         self.mousePressPos = None
         self.mousePressRect = None
@@ -121,9 +120,9 @@ class GraphicsRectItem(QGraphicsRectItem):
         # Update current resize handles according to the shape size and position.
 
         s = self.handleSize
-        print(s)
+        # print(s)
         b = self.boundingRect()
-        print(b.left(), b.top())
+        # print(b.left(), b.top())
         self.handles[self.handleTopLeft] = QRectF(b.left(), b.top(), s, s)
         self.handles[self.handleTopMiddle] = QRectF(
             b.center().x() - s / 2, b.top(), s, s)

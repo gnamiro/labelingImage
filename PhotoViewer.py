@@ -50,7 +50,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             # self.update()
             # print(self.destination, self.begin)
 
-        super(PhotoViewer, self).mouseMoveEvent(event)
+        super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         super().mouseReleaseEvent(event)
