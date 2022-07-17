@@ -118,6 +118,7 @@ class RetinalApplication(QtWidgets.QDialog):
         self.currentRectTopLeft = QtCore.QPointF()
         self.currentRectSize = QtCore.QSizeF()
         self.prevSelectedBoundingBox = None
+        self.categoryDialog.uncheckItems()
 
     def paintEvent(self, event):
         super(RetinalApplication, self).paintEvent(event)
@@ -202,6 +203,11 @@ class RetinalApplication(QtWidgets.QDialog):
     def toggleImageCompletion(self):
         global imageInfoDf, imageInfoFileName
         currentImage = self.ui.listWidget.currentItem()
+
+        if currentImage is None:
+            print('no image selected')
+            return
+
         idx = self.findImageIndex(currentImage.text(), self.dir)
         print(idx)
         if idx[0].size > 0:
@@ -335,6 +341,10 @@ class RetinalApplication(QtWidgets.QDialog):
     def saveDialogInfo(self):
         global database
         index, info, cords = self.categoryDialog.saveInfo()
+        if index == -1:
+            print('No data selected')
+            return
+
         beginPos = cords[0]
         size = cords[1]
 
@@ -371,6 +381,10 @@ class RetinalApplication(QtWidgets.QDialog):
 
     def deleteDialogInfo(self):
         index, cords = self.categoryDialog.deleteInfo()
+
+        if index == -1:
+            return
+
         self.deleteInfo(index, cords)
 
     def deleteInfo(self, index, cords):

@@ -8,6 +8,7 @@ class CategoryDialog:
 
         self.info = []
         self._category = []
+        self.index = -1
 
         self.ui.addCategoryButton.clicked.connect(self.addNewCategory)
 
@@ -76,9 +77,14 @@ class CategoryDialog:
                 item.setCheckState(QtCore.Qt.Unchecked)
 
     def saveInfo(self):
+        if not self.info:
+            return (-1, '', None)
+
         infoMessage = ','.join(str(e) for e in self.info)
         self.uncheckItems()
-        return (self.index, infoMessage, self.cords)
+        _index = self.index
+        self.index = -1
+        return (_index, infoMessage, self.cords)
         self.sendMessage.emit(1, self.index, infoMessage,
                               self.cords[0], self.cords[1])
         self.close()
@@ -86,6 +92,13 @@ class CategoryDialog:
     def deleteInfo(self):
         self.info = []
         self.uncheckItems()
-        return (self.index, self.cords)
+
+        if self.index == -1:
+            print('no Bbox selected')
+            return (-1, None)
+
+        _index = self.index
+        self.index = -1
+        return (_index, self.cords)
         self.dialogStatus.emit(0, self.index, '', self.cords[0], self.cords[1])
         self.close()
