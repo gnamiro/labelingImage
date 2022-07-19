@@ -9,6 +9,7 @@ import os
 from LabelApplicationUI import Ui_dialog
 from categoryDialog import CategoryApplication
 from category import CategoryDialog
+from temp import GraphicsRectItem
 
 import pandas as pd
 import numpy as np
@@ -44,6 +45,13 @@ class BoundingBox():
     def decrement(self):
         self.stack = max(self.stack - 1, 0)
 
+    def updateRectPos(self, diffX, diffY):
+        self.rectF.translate(diffX, diffY)
+
+    def updateRectSize(self, height, width):
+        self.rectF.setHeight(height)
+        self.rectF.setWidth(width)
+
     def __eq__(self, other):
         return other is not None and self.stack == other.stack and self.rectF == other.rectF
 
@@ -77,8 +85,13 @@ class RetinalApplication(QtWidgets.QDialog):
         self.prevSelectedBoundingBox = None
         self.prevSelectedRectItem = None
 
+        self.selectedRect = None
+        self.selecting = 0
+
         # self.dialog = CategoryApplication()
         self.categoryDialog = CategoryDialog(self.ui, self.model)
+
+        self.ui.graphicsView.show()
 
         # signal connections
         self.ui.OpenFolderButton.clicked.connect(self.chooseFolder)
@@ -92,6 +105,7 @@ class RetinalApplication(QtWidgets.QDialog):
         self.ui.SaveButton.clicked.connect(self.saveImageData)
         self.ui.DeleteButton.clicked.connect(self.deleteAllInfo)
         self.ui.DataFilePathButton.clicked.connect(self.chooseDataPath)
+        self.ui.dragModeButtton.clicked.connect(self.toggleDragMode)
 
     def readDataFromDatabase(self):
         global database, imageInfoDf, imageInfoFileName
@@ -129,12 +143,15 @@ class RetinalApplication(QtWidgets.QDialog):
 
         if(self.ui.graphicsView.hasPhoto()):
             if not self.currentRectTopLeft.isNull() and not self.currentRectSize.isNull():
-                rect_item = QtWidgets.QGraphicsRectItem(
+                rect_item = GraphicsRectItem(
                     QtCore.QRectF(self.currentRectTopLeft, self.currentRectSize))
-                # rect_item.setPen(QtGui.QPen(QtGui.QColor(255, 0, 0, 255)))
-                rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+
                 self.rects.append(rect_item)
+                # if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
                 self.ui.graphicsView._scene.addItem(rect_item)
+
+                self.currentRectTopLeft = QtCore.QPointF()
+                self.currentRectSize = QtCore.QSizeF()
 
     def chooseDataPath(self):
         self.dataFileName = QtWidgets.QFileDialog.getSaveFileName(
@@ -142,6 +159,7 @@ class RetinalApplication(QtWidgets.QDialog):
         print(self.dataFileName)
 
     def chooseFolder(self):
+        # TODO: os.path.join
         self.dir = QtWidgets.QFileDialog.getExistingDirectory(
             None, 'Select a folder:', 'C:\\', QtWidgets.QFileDialog.ShowDirsOnly)
         if self.dir != '':
@@ -169,7 +187,7 @@ class RetinalApplication(QtWidgets.QDialog):
         for index in range(self.ui.listWidget.count()):
             idx = self.findImageIndex(
                 self.ui.listWidget.item(index).text(), self.dir)
-            print(idx[0])
+            # print(idx[0])
             if idx[0].size > 0:
                 if imageInfoDf.at[idx[0][0], 'status'] == 1:
                     self.ui.listWidget.item(index).setBackground(
@@ -178,6 +196,8 @@ class RetinalApplication(QtWidgets.QDialog):
 
     def showImage(self):
         print(self.ui.listWidget.currentItem().text())
+        self.selecting = 1
+        self.toggleDragMode()
         imagePath = self.dir + '/' + self.ui.listWidget.currentItem().text()
 
         if(os.path.isfile(imagePath)):
@@ -193,7 +213,7 @@ class RetinalApplication(QtWidgets.QDialog):
 
             self.refreshScene()
             self.ui.graphicsView.setPhoto(pixmapRescaled)
-
+            self.ui.graphicsView.resetDragMode()
             self.loadImageBboxes()
 
         else:
@@ -243,65 +263,99 @@ class RetinalApplication(QtWidgets.QDialog):
             pass
 
     def photoClicked(self, pos):
+        self.begin = pos
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
-            self.begin = pos
             # print(self.begin)
             self.update()
 
     def photoMoved(self, pos):
+        self.ui.graphicsView.removeRects(self.rects[:-1])
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
             self.currentRectTopLeft = getTopLeftOfRect(self.begin, pos)
             self.currentRectSize = getSizeOfRect(self.begin, pos)
-
-            self.ui.graphicsView.removeRects(self.rects[:-1])
 
             self.update()
 
     def photoReleased(self, pos):
+        self.ui.graphicsView.removeRects(self.rects)
+        self.rects = []
+        self.currentRectTopLeft = getTopLeftOfRect(self.begin, pos)
+        self.currentRectSize = getSizeOfRect(self.begin, pos)
+        distance = (self.currentRectSize.width() ** 2 +
+                    self.currentRectSize.height() ** 2) ** 0.5
+
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
-            self.ui.graphicsView.removeRects(self.rects)
-            self.currentRectTopLeft = getTopLeftOfRect(self.begin, pos)
-            self.currentRectSize = getSizeOfRect(self.begin, pos)
-            distance = (self.currentRectSize.width() ** 2 +
-                        self.currentRectSize.height() ** 2) ** 0.5
-
             if (self.isItClick(distance)):
-                boundingBox, index = self.findBoundingBox(pos)
-                if (self.prevSelectedBoundingBox is not None and self.prevSelectedBoundingBox != boundingBox):
-                    self.prevSelectedBoundingBox.decrement()
-
-                    if self.prevSelectedRectItem is not None:
-                        self.prevSelectedRectItem.setPen(
-                            QtGui.QPen(bboxFirstColor))
-                if (boundingBox is not None):
-
-                    boundingBox.increment()
-                    if (boundingBox.stack == 2):
-                        # twice clicked
-                        rect_item = self.findRectItem(
-                            (boundingBox.rectF.x(), boundingBox.rectF.y()), (boundingBox.rectF.size().width(), boundingBox.rectF.size().height()))
-                        rect_item.setPen(
-                            QtGui.QPen(bboxSecondColor))
-                        self.openCategoryDialog(
-                            boundingBox.rectF.topLeft(), boundingBox.rectF.size(), index)
-
-                        boundingBox.decrement()
-
-                        self.prevSelectedRectItem = rect_item
-                    self.prevSelectedBoundingBox = boundingBox
-
+                self.selectingRectItem(pos)
             else:
                 self.createQrectItem(
                     self.currentRectTopLeft, self.currentRectSize)
 
+        if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.ScrollHandDrag:
+            if (self.isItClick(distance)):
+                self.selectingRectItem(pos)
+            else:
+                boundingBox, index = self.findBoundingBox(self.begin)
+                if boundingBox is not None:
+
+                    diffX, diffY = pos.x() - self.begin.x(), pos.y() - self.begin.y()
+                    oldRectInfo = self.boundingBoxes[index]
+
+                    topLeftRate, rectSizeRate = self.calculateRectSizeRate(
+                        oldRectInfo.rectF.topLeft(), oldRectInfo.rectF.size())
+
+                    bboxId = '-'.join(str(e)
+                                      for e in topLeftRate + rectSizeRate)
+                    currentPic = self.ui.listWidget.currentItem().text()
+
+                    idx = self.findSelectedBbox(currentPic, bboxId)
+                    print(idx)
+                    self.boundingBoxes[index].updateRectPos(
+                        diffX, diffY)
+
+                    # self.rect_items[index].updateRectPos(diffX, diffY)
+
+                    self.boundingBoxes[index] = self.updateDatabase(
+                        idx, self.boundingBoxes[index])
+                print(self.boundingBoxes, index)
+        # print(self.rect_items)
+        self.currentRectTopLeft = QtCore.QPointF()
+        self.currentRectSize = QtCore.QSizeF()
+
+    def selectingRectItem(self, pos):
+        boundingBox, index = self.findBoundingBox(pos)
+        if (self.prevSelectedBoundingBox is not None and self.prevSelectedBoundingBox != boundingBox):
+            self.prevSelectedBoundingBox.decrement()
+
+            if self.prevSelectedRectItem is not None:
+                # self.prevSelectedRectItem.toggleRectSelection()
+                self.prevSelectedRectItem.setPen(QtGui.QPen(bboxFirstColor))
+        if (boundingBox is not None):
+            print('found it2')
+            boundingBox.increment()
+            if (boundingBox.stack == 2):
+                # twice clicked
+                rect_item = self.rect_items[index]
+                rect_item.setPen(
+                    QtGui.QPen(bboxSecondColor))
+
+                self.selectedRect = rect_item
+                self.openCategoryDialog(
+                    boundingBox.rectF.topLeft(), boundingBox.rectF.size(), index)
+
+                boundingBox.decrement()
+
+                self.prevSelectedRectItem = rect_item
+            self.prevSelectedBoundingBox = boundingBox
+
     def createQrectItem(self, topLeft, rectSize):
         rectF = QtCore.QRectF(
             topLeft, rectSize)
-        rect_item = QtWidgets.QGraphicsRectItem(rectF)
-        rect_item.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable, True)
+        rect_item = GraphicsRectItem(rectF)
 
         self.ui.graphicsView._scene.addItem(rect_item)
         self.boundingBoxes.append(BoundingBox(rectF))
+        self.selectedRect = rect_item
         self.rect_items.append(rect_item)
 
     def isItClick(self, distance):
@@ -323,6 +377,19 @@ class RetinalApplication(QtWidgets.QDialog):
                     minimumBoundedBoxIndex = index
         return minimumBoundedBox, minimumBoundedBoxIndex
 
+    def toggleDragMode(self):
+        self.selecting = not self.selecting
+        self.ui.graphicsView.toggleDragMode()
+
+        if self.selecting:
+            self.ui.dragModeButtton.setStyleSheet(
+                'background-color: green; color: white')
+            self.ui.dragModeButtton.setText('DrawMode')
+        else:
+            self.ui.dragModeButtton.setStyleSheet(
+                'background-color: rgba(225,225,225,255); border: 1px solid rgba(250,250,250,255)')
+            self.ui.dragModeButtton.setText('DragMode')
+
     def openCategoryDialog(self, beginCord, size, boundingBoxIndex):
         topLeft, rectSize = [round(beginCord.x()/self.xSize, 14), round(beginCord.y()/self.ySize, 14)], [
             round(size.width()/self.xSize, 14), round(size.height()/self.ySize, 14)]
@@ -337,6 +404,50 @@ class RetinalApplication(QtWidgets.QDialog):
             self.categoryDialog.load_data(database.at[idx[0][0], 'category'])
         else:
             self.categoryDialog.uncheckItems()
+
+    def updateDatabase(self, idx, newRectBbox):
+        newRect = newRectBbox.rectF
+
+        print(idx)
+        if idx[0].size > 0:
+            print('found it 3')
+            index = idx[0][0]
+
+            topLeftRate, rectSizeRate = self.calculateRectSizeRate(
+                newRect.topLeft(), newRect.size())
+            bboxId = '-'.join(str(e) for e in topLeftRate + rectSizeRate)
+
+            if '--' in bboxId or topLeftRate[0] > 1 or topLeftRate[1] > 1:
+                print('reverting back')
+                newRectBbox = self.revertBboxChange(newRectBbox, index)
+                return
+
+            database.at[index, 'bbox_id'] = bboxId
+            database.at[index, 'bbox_x'] = topLeftRate[0]
+            database.at[index, 'bbox_y'] = topLeftRate[1]
+            database.at[index, 'bbox_w'] = rectSizeRate[0]
+            database.at[index, 'bbox_h'] = rectSizeRate[1]
+
+            if self.isAutoSave():
+                self.saveImageData()
+
+            return newRectBbox
+
+    def revertBboxChange(self, rectBox, index):
+        topLeftdim = [float(database.at[index, 'bbox_x']*self.xSize),
+                      float(database.at[index, 'bbox_y']*self.ySize)]
+        rectSizedim = [float(database.at[index, 'bbox_w'])*self.xSize,
+                       float(database.at[index, 'bbox_h'])*self.ySize]
+
+        topLeft = QtCore.QPointF(
+            topLeftdim[0], topLeftdim[1])
+        rectSize = QtCore.QSizeF(
+            rectSizedim[0], rectSizedim[1])
+        rectF = QtCore.QRectF(
+            topLeft, rectSize
+        )
+        rectBox = BoundingBox(rectF)
+        return rectBox
 
     def saveDialogInfo(self):
         global database
@@ -441,6 +552,10 @@ class RetinalApplication(QtWidgets.QDialog):
                     return rect_item
 
         return None
+
+    def calculateRectSizeRate(self, rectTopLeft, rectSize):
+        return [round(rectTopLeft.x()/self.xSize, 14), round(rectTopLeft.y()/self.ySize, 14)], [
+            round(rectSize.width()/self.xSize, 14), round(rectSize.height()/self.ySize, 14)]
 
     def saveImageData(self):
         database.to_csv(self.dataFileName, index=False)
