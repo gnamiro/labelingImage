@@ -1,11 +1,12 @@
 import sys
 
-from PyQt5.QtCore import Qt, QRectF, QPointF
+from PyQt5.QtCore import Qt, QRectF, QPointF, pyqtSignal
 from PyQt5.QtGui import QBrush, QPainterPath, QPainter, QColor, QPen, QPixmap
 from PyQt5.QtWidgets import QGraphicsRectItem, QApplication, QGraphicsView, QGraphicsScene, QGraphicsItem
 
 
 class GraphicsRectItem(QGraphicsRectItem):
+    itemInteractiveChange = pyqtSignal(QRectF)
 
     handleTopLeft = 1
     handleTopMiddle = 2
@@ -18,6 +19,8 @@ class GraphicsRectItem(QGraphicsRectItem):
 
     handleSize = +8.0
     handleSpace = -4.0
+
+    moveRect = 0
 
     rectThreshold = +24.0
 
@@ -84,7 +87,6 @@ class GraphicsRectItem(QGraphicsRectItem):
 
     def mousePressEvent(self, mouseEvent):
         # Executed when the mouse is pressed on the item.
-
         self.handleSelected = self.handleAt(mouseEvent.pos())
         if self.handleSelected:
             self.mousePressPos = mouseEvent.pos()
@@ -93,8 +95,6 @@ class GraphicsRectItem(QGraphicsRectItem):
 
     def mouseMoveEvent(self, mouseEvent):
         # Executed when the mouse is being moved over the item while being pressed.
-
-        # print('98heelo')
         if self.handleSelected is not None:
             self.interactiveResize(mouseEvent.pos())
         else:
@@ -102,7 +102,6 @@ class GraphicsRectItem(QGraphicsRectItem):
 
     def mouseReleaseEvent(self, mouseEvent):
         # Executed when the mouse is released from the item.
-
         super().mouseReleaseEvent(mouseEvent)
         # print('108heelo')
         self.handleSelected = None
@@ -115,6 +114,17 @@ class GraphicsRectItem(QGraphicsRectItem):
 
         o = self.handleSize + self.handleSpace
         return self.rect().adjusted(-o, -o, o, o)
+
+    # def updateRectPos(self, diffX, diffY):
+    #     rect = self.rect()
+    #     print(rect.x(), rect.y())
+    #     print(diffX, diffY)
+    #     rect.translate(diffX, diffY)
+    #     print(rect.x(), rect.y())
+    #     self.setRect(rect)
+    #     coor = rect.getRect()
+    #     print(coor[0], coor[1])
+    #     self.setTransformOriginPoint(coor[0] + coor[2]/2, coor[1] + coor[3]/2)
 
     def updateHandlesPos(self):
         # Update current resize handles according to the shape size and position.

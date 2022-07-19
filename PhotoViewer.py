@@ -32,17 +32,17 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self._scene.removeItem(rectItem)
 
     def mousePressEvent(self, event):
-        if self._photo.isUnderMouse():
-            if self.dragMode() == QtWidgets.QGraphicsView.NoDrag and event.button() == QtCore.Qt.LeftButton:
-                self.begin = event.pos()
-                self.destination = self.begin
-                self.photoClicked.emit(self.mapToScene(self.begin))
-                self.update()
+        if self._photo.isUnderMouse() and event.button() == QtCore.Qt.LeftButton:
+            self.begin = event.pos()
+            self.destination = self.begin
+            self.photoClicked.emit(self.mapToScene(self.begin))
+            # if self.dragMode() == QtWidgets.QGraphicsView.NoDrag:
+            #     self.update()
 
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self.dragMode() == QtWidgets.QGraphicsView.NoDrag and self._photo.isUnderMouse() and (event.buttons() & QtCore.Qt.LeftButton):
+        if self._photo.isUnderMouse() and (event.buttons() & QtCore.Qt.LeftButton):
             self.destination = event.pos()
 
             self.photoMoved.emit(
@@ -54,16 +54,17 @@ class PhotoViewer(QtWidgets.QGraphicsView):
 
     def mouseReleaseEvent(self, event):
         super().mouseReleaseEvent(event)
-        if self.dragMode() == QtWidgets.QGraphicsView.NoDrag and self._photo.isUnderMouse() and (event.button() & QtCore.Qt.LeftButton):
+        if self._photo.isUnderMouse() and (event.button() & QtCore.Qt.LeftButton):
             self.destination = event.pos()
             self.photoReleased.emit(
                 self.mapToScene(self.destination))
-            # rect = QtCore.QRect(self.begin, self.destination)
-            # painter = QtGui.QPainter(self._photo.pixmap())
-            # painter.drawRect(rect.normalized())
+            # if self.dragMode() == QtWidgets.QGraphicsView.NoDrag:
+            #     # rect = QtCore.QRect(self.begin, self.destination)
+            #     # painter = QtGui.QPainter(self._photo.pixmap())
+            #     # painter.drawRect(rect.normalized())
 
-            # self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
-            self.update()
+            #     # self.begin, self.destination = QtCore.QPoint(), QtCore.QPoint()
+            #     self.update()
 
     def hasPhoto(self):
         return not self._empty

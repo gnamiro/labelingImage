@@ -45,6 +45,9 @@ class BoundingBox():
     def decrement(self):
         self.stack = max(self.stack - 1, 0)
 
+    def updateRectPos(self, diffX, diffY):
+        self.rectF.translate(diffX, diffY)
+
     def __eq__(self, other):
         return other is not None and self.stack == other.stack and self.rectF == other.rectF
 
@@ -271,40 +274,68 @@ class RetinalApplication(QtWidgets.QDialog):
 
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
             if (self.isItClick(distance)):
-                boundingBox, index = self.findBoundingBox(pos)
-                if (self.prevSelectedBoundingBox is not None and self.prevSelectedBoundingBox != boundingBox):
-                    self.prevSelectedBoundingBox.decrement()
-
-                    if self.prevSelectedRectItem is not None:
-                        self.prevSelectedRectItem.setPen(
-                            QtGui.QPen(bboxFirstColor))
-                if (boundingBox is not None):
-
-                    boundingBox.increment()
-                    if (boundingBox.stack == 2):
-                        # twice clicked
-                        rect_item = self.findRectItem(
-                            (boundingBox.rectF.x(), boundingBox.rectF.y()), (boundingBox.rectF.size().width(), boundingBox.rectF.size().height()))
-                        rect_item.setPen(
-                            QtGui.QPen(bboxSecondColor))
-
-                        self.selectedRect = rect_item
-                        self.openCategoryDialog(
-                            boundingBox.rectF.topLeft(), boundingBox.rectF.size(), index)
-
-                        boundingBox.decrement()
-
-                        self.prevSelectedRectItem = rect_item
-                    self.prevSelectedBoundingBox = boundingBox
-
+                self.selectingRectItem(pos, distance)
             else:
                 self.createQrectItem(
                     self.currentRectTopLeft, self.currentRectSize)
 
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.ScrollHandDrag:
-            print('ok')
+            if (self.isItClick(distance)):
+                self.selectingRectItem(pos, distance)
+            else:
+                boundingBox, index = self.findBoundingBox(self.begin)
+                if boundingBox is not None:
+                    print('found it')
 
-        print(self.rect_items)
+                    diffX, diffY = pos.x() - self.begin.x(), pos.y() - self.begin.y()
+                    oldRectInfo = self.boundingBoxes[index]
+
+                    topLeftRate, rectSizeRate = self.calculateRectSizeRate(
+                        oldRectInfo.rectF.topLeft(), oldRectInfo.rectF.size())
+
+                    bboxId = '-'.join(str(e)
+                                      for e in topLeftRate + rectSizeRate)
+                    currentPic = self.ui.listWidget.currentItem().text()
+
+                    idx = self.findSelectedBbox(currentPic, bboxId)
+
+                    self.boundingBoxes[index].updateRectPos(
+                        diffX, diffY)
+
+                    print(oldRectInfo.rectF.topLeft().x(),
+                          oldRectInfo.rectF.topLeft().y())
+
+                    self.updateDatabase(idx, self.boundingBoxes[index])
+                print(self.boundingBoxes, index)
+        # print(self.rect_items)
+        self.currentRectTopLeft = QtCore.QPointF()
+        self.currentRectSize = QtCore.QSizeF()
+
+    def selectingRectItem(self, pos, distance):
+        boundingBox, index = self.findBoundingBox(pos)
+        if (self.prevSelectedBoundingBox is not None and self.prevSelectedBoundingBox != boundingBox):
+            self.prevSelectedBoundingBox.decrement()
+
+            if self.prevSelectedRectItem is not None:
+                self.prevSelectedRectItem.setPen(
+                    QtGui.QPen(bboxFirstColor))
+        if (boundingBox is not None):
+            print('found it2')
+            boundingBox.increment()
+            if (boundingBox.stack == 2):
+                # twice clicked
+                rect_item = self.rect_items[index]
+                rect_item.setPen(
+                    QtGui.QPen(bboxSecondColor))
+
+                self.selectedRect = rect_item
+                self.openCategoryDialog(
+                    boundingBox.rectF.topLeft(), boundingBox.rectF.size(), index)
+
+                boundingBox.decrement()
+
+                self.prevSelectedRectItem = rect_item
+            self.prevSelectedBoundingBox = boundingBox
 
     def createQrectItem(self, topLeft, rectSize):
         rectF = QtCore.QRectF(
@@ -315,8 +346,6 @@ class RetinalApplication(QtWidgets.QDialog):
         self.boundingBoxes.append(BoundingBox(rectF))
         self.selectedRect = rect_item
         self.rect_items.append(rect_item)
-        self.currentRectTopLeft = QtCore.QPointF()
-        self.currentRectSize = QtCore.QSizeF()
 
     def isItClick(self, distance):
         if (distance < clickDistanceThreshold):
@@ -364,6 +393,26 @@ class RetinalApplication(QtWidgets.QDialog):
             self.categoryDialog.load_data(database.at[idx[0][0], 'category'])
         else:
             self.categoryDialog.uncheckItems()
+
+    def updateDatabase(self, idx, newRectBbox):
+        newRect = newRectBbox.rectF
+
+        print(idx)
+        if idx[0].size > 0:
+            print('found it 3')
+            index = idx[0][0]
+
+            topLeftRate, rectSizeRate = self.calculateRectSizeRate(
+                newRect.topLeft(), newRect.size())
+            bboxId = '-'.join(str(e) for e in topLeftRate + rectSizeRate)
+
+            database.at[index, 'bbox_id'] = bboxId
+            database.at[index, 'bbox_x'] = topLeftRate[0]
+            database.at[index, 'bbox_y'] = topLeftRate[1]
+            database.at[index, 'bbox_w'] = rectSizeRate[0]
+            database.at[index, 'bbox_h'] = rectSizeRate[1]
+
+            self.saveImageData()
 
     def saveDialogInfo(self):
         global database
@@ -460,6 +509,10 @@ class RetinalApplication(QtWidgets.QDialog):
                     return rect_item
 
         return None
+
+    def calculateRectSizeRate(self, rectTopLeft, rectSize):
+        return [round(rectTopLeft.x()/self.xSize, 14), round(rectTopLeft.y()/self.ySize, 14)], [
+            round(rectSize.width()/self.xSize, 14), round(rectSize.height()/self.ySize, 14)]
 
     def saveImageData(self):
         database.to_csv(self.dataFileName, index=False)
