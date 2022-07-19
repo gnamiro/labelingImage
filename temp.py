@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QGraphicsRectItem, QApplication, QGraphicsView, QGra
 
 
 class GraphicsRectItem(QGraphicsRectItem):
-    itemInteractiveChange = pyqtSignal(QRectF)
+    itemInteractiveChange = pyqtSignal(QRectF, QRectF)
 
     handleTopLeft = 1
     handleTopMiddle = 2
@@ -47,7 +47,7 @@ class GraphicsRectItem(QGraphicsRectItem):
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
         self.setFlag(QGraphicsItem.ItemIsFocusable, True)
-        self.selected = 1
+        self.selected = 0
 
         self.handleRectSizeThreshold = {
             self.handleTopLeft: self.TL,
@@ -59,6 +59,9 @@ class GraphicsRectItem(QGraphicsRectItem):
             self.handleBottomMiddle: self.BM,
             self.handleBottomRight: self.BR,
         }
+
+        # assigning copy of rectF
+        self._rectF = args[0]
 
         self.updateHandlesPos()
 
@@ -115,16 +118,12 @@ class GraphicsRectItem(QGraphicsRectItem):
         o = self.handleSize + self.handleSpace
         return self.rect().adjusted(-o, -o, o, o)
 
-    # def updateRectPos(self, diffX, diffY):
-    #     rect = self.rect()
-    #     print(rect.x(), rect.y())
-    #     print(diffX, diffY)
-    #     rect.translate(diffX, diffY)
-    #     print(rect.x(), rect.y())
-    #     self.setRect(rect)
-    #     coor = rect.getRect()
-    #     print(coor[0], coor[1])
-    #     self.setTransformOriginPoint(coor[0] + coor[2]/2, coor[1] + coor[3]/2)
+    def updateRectPos(self, diffX, diffY):
+        self._rectF.translate(diffX, diffY)
+
+    def updateRectSize(self, width, height):
+        self._rectF.setHeight(height)
+        self._rectF.setWidth(width)
 
     def updateHandlesPos(self):
         # Update current resize handles according to the shape size and position.
@@ -261,6 +260,9 @@ class GraphicsRectItem(QGraphicsRectItem):
             rect = self.handleRectSizeThreshold[self.handleBottomRight](
                 boundingRect, rect, offset)
             self.setRect(rect)
+            print(self.rect().x(), self.rect().y(),
+                  self.rect().size().width(), self.rect().size().height())
+            # self.itemInteractiveChange.emit(self._rectF, self.rect())
 
         self.updateHandlesPos()
 
@@ -363,21 +365,28 @@ class GraphicsRectItem(QGraphicsRectItem):
                 path.addEllipse(shape)
         return path
 
-    def paint(self, painter, option, widget=None):
-        # Paint the node in the graphic view.
+    # def paint(self, painter, option, widget=None):
+    #     # Paint the node in the graphic view.
 
-        # painter.setBrush(QBrush(QColor(255, 255, 255, 255)))
-        painter.setPen(QPen(QColor(0, 0, 0), 1.0, Qt.SolidLine))
-        painter.drawRect(self.rect())
+    #     # painter.setBrush(QBrush(QColor(255, 255, 255, 255)))
+    #     if self.selected == False:
+    #         painter.setPen(QPen(QColor(0, 0, 0), 1.0, Qt.SolidLine))
+    #     else:
+    #         painter.setPen(QPen(QColor(255, 0, 0), 1.0, Qt.SolidLine))
 
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(QBrush(QColor(255, 0, 0, 255)))
-        painter.setPen(QPen(QColor(0, 0, 0, 255), 1.0,
-                       Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-        if self.selected == 1:
-            for handle, rect in self.handles.items():
-                if self.handleSelected is None or handle == self.handleSelected:
-                    painter.drawEllipse(rect)
+    #     painter.drawRect(self.rect())
+
+        # painter.setRenderHint(QPainter.Antialiasing)
+        # painter.setBrush(QBrush(QColor(255, 0, 0, 255)))
+        # painter.setPen(QPen(QColor(0, 0, 0, 255), 1.0,
+        #                Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        # if self.selected == 1:
+        #     for handle, rect in self.handles.items():
+        #         if self.handleSelected is None or handle == self.handleSelected:
+        #             painter.drawEllipse(rect)
+
+    def toggleRectSelection(self):
+        self.selected = not self.selected
 
 
 def main():

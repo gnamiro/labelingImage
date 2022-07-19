@@ -48,6 +48,10 @@ class BoundingBox():
     def updateRectPos(self, diffX, diffY):
         self.rectF.translate(diffX, diffY)
 
+    def updateRectSize(self, height, width):
+        self.rectF.setHeight(height)
+        self.rectF.setWidth(width)
+
     def __eq__(self, other):
         return other is not None and self.stack == other.stack and self.rectF == other.rectF
 
@@ -274,16 +278,19 @@ class RetinalApplication(QtWidgets.QDialog):
 
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
             if (self.isItClick(distance)):
-                self.selectingRectItem(pos, distance)
+                self.selectingRectItem(pos)
             else:
                 self.createQrectItem(
                     self.currentRectTopLeft, self.currentRectSize)
 
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.ScrollHandDrag:
             if (self.isItClick(distance)):
-                self.selectingRectItem(pos, distance)
+                print('hello there')
+                self.selectingRectItem(pos)
             else:
+                print('iam here')
                 boundingBox, index = self.findBoundingBox(self.begin)
+                print('not clicked')
                 if boundingBox is not None:
                     print('found it')
 
@@ -298,27 +305,27 @@ class RetinalApplication(QtWidgets.QDialog):
                     currentPic = self.ui.listWidget.currentItem().text()
 
                     idx = self.findSelectedBbox(currentPic, bboxId)
-
+                    print(idx)
                     self.boundingBoxes[index].updateRectPos(
                         diffX, diffY)
 
-                    print(oldRectInfo.rectF.topLeft().x(),
-                          oldRectInfo.rectF.topLeft().y())
+                    # self.rect_items[index].updateRectPos(diffX, diffY)
 
-                    self.updateDatabase(idx, self.boundingBoxes[index])
+                    self.boundingBoxes[index] = self.updateDatabase(
+                        idx, self.boundingBoxes[index])
                 print(self.boundingBoxes, index)
         # print(self.rect_items)
         self.currentRectTopLeft = QtCore.QPointF()
         self.currentRectSize = QtCore.QSizeF()
 
-    def selectingRectItem(self, pos, distance):
+    def selectingRectItem(self, pos):
         boundingBox, index = self.findBoundingBox(pos)
         if (self.prevSelectedBoundingBox is not None and self.prevSelectedBoundingBox != boundingBox):
             self.prevSelectedBoundingBox.decrement()
 
             if self.prevSelectedRectItem is not None:
-                self.prevSelectedRectItem.setPen(
-                    QtGui.QPen(bboxFirstColor))
+                # self.prevSelectedRectItem.toggleRectSelection()
+                self.prevSelectedRectItem.setPen(QtGui.QPen(bboxFirstColor))
         if (boundingBox is not None):
             print('found it2')
             boundingBox.increment()
@@ -406,13 +413,37 @@ class RetinalApplication(QtWidgets.QDialog):
                 newRect.topLeft(), newRect.size())
             bboxId = '-'.join(str(e) for e in topLeftRate + rectSizeRate)
 
+            if '--' in bboxId or topLeftRate.x() > 1 or topLeftRate.y() > 1:
+                print('reverting back')
+                newRectBbox = self.revertBboxChange(newRectBbox, index)
+                return
+
             database.at[index, 'bbox_id'] = bboxId
             database.at[index, 'bbox_x'] = topLeftRate[0]
             database.at[index, 'bbox_y'] = topLeftRate[1]
             database.at[index, 'bbox_w'] = rectSizeRate[0]
             database.at[index, 'bbox_h'] = rectSizeRate[1]
 
-            self.saveImageData()
+            if self.isAutoSave():
+                self.saveImageData()
+
+            return newRectBbox
+
+    def revertBboxChange(self, rectBox, index):
+        topLeftdim = [float(database.at[index, 'bbox_x']*self.xSize),
+                      float(database.at[index, 'bbox_y']*self.ySize)]
+        rectSizedim = [float(database.at[index, 'bbox_w'])*self.xSize,
+                       float(database.at[index, 'bbox_h'])*self.ySize]
+
+        topLeft = QtCore.QPointF(
+            topLeftdim[0], topLeftdim[1])
+        rectSize = QtCore.QSizeF(
+            rectSizedim[0], rectSizedim[1])
+        rectF = QtCore.QRectF(
+            topLeft, rectSize
+        )
+        rectBox = BoundingBox(rectF)
+        return rectBox
 
     def saveDialogInfo(self):
         global database
