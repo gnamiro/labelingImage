@@ -268,7 +268,8 @@ class Ui_dialog(object):
         _translate = QtCore.QCoreApplication.translate
         dialog.setWindowTitle(_translate("dialog", "Retinal Lesion Annotator"))
         # TODO: 1. ADD resource path of logo image to icon title
-        dialog.setWindowIcon(QtGui.QIcon(current_directory+'/images/logo.jpg'))
+        logo_image = resource_path("Images/logo.jpg")
+        dialog.setWindowIcon(QtGui.QIcon(logo_image))
         self.label.setText(_translate("dialog", "Retinal Lesion Annotator"))
         self.label_2.setText(_translate("dialog", "Folder content:"))
         self.OpenFolderButton.setText(
