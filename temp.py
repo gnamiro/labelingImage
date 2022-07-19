@@ -20,7 +20,7 @@ class GraphicsRectItem(QGraphicsRectItem):
     handleSize = +8.0
     handleSpace = -4.0
 
-    moveRect = 0
+    rectResized = 0
 
     rectThreshold = +24.0
 
@@ -105,12 +105,14 @@ class GraphicsRectItem(QGraphicsRectItem):
 
     def mouseReleaseEvent(self, mouseEvent):
         # Executed when the mouse is released from the item.
+
         super().mouseReleaseEvent(mouseEvent)
         # print('108heelo')
         self.handleSelected = None
         self.mousePressPos = None
         self.mousePressRect = None
         self.update()
+        self.scene().itemResizing.emit(self)
 
     def boundingRect(self):
         # Returns the bounding rect of the shape (including the resize handles).
@@ -262,7 +264,6 @@ class GraphicsRectItem(QGraphicsRectItem):
             self.setRect(rect)
             print(self.rect().x(), self.rect().y(),
                   self.rect().size().width(), self.rect().size().height())
-            # self.itemInteractiveChange.emit(self._rectF, self.rect())
 
         self.updateHandlesPos()
 

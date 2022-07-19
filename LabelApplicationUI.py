@@ -277,7 +277,7 @@ class Ui_dialog(object):
         self.DataFilePathButton.setText(
             _translate("dialog", "Choose Data File Path"))
         self.SaveButton.setText(_translate("dialog", " Save Image Info"))
-        self.DeleteButton.setText(_translate("dialog", "Delete Imagel Info"))
+        self.DeleteButton.setText(_translate("dialog", "Delete Image Info"))
         self.dragModeButtton.setText(_translate("dialog", "DragMode"))
         self.AutoSaveCheckbox.setText(
             _translate("dialog", "AutoSave Image Info"))

@@ -1,6 +1,10 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
+class GraphicsScene(QtWidgets.QGraphicsScene):
+    itemResizing = QtCore.pyqtSignal(object)
+
+
 class PhotoViewer(QtWidgets.QGraphicsView):
     photoClicked = QtCore.pyqtSignal(QtCore.QPointF)
     photoReleased = QtCore.pyqtSignal(QtCore.QPointF)
@@ -10,7 +14,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         super(PhotoViewer, self).__init__(parent)
         self._zoom = 0
         self._empty = True
-        self._scene = QtWidgets.QGraphicsScene(self)
+        self._scene = GraphicsScene(self)
         self._photo = QtWidgets.QGraphicsPixmapItem()
         self._scene.addItem(self._photo)
         self.setScene(self._scene)

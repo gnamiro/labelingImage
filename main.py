@@ -106,6 +106,7 @@ class RetinalApplication(QtWidgets.QDialog):
         self.ui.DeleteButton.clicked.connect(self.deleteAllInfo)
         self.ui.DataFilePathButton.clicked.connect(self.chooseDataPath)
         self.ui.dragModeButtton.clicked.connect(self.toggleDragMode)
+        self.ui.graphicsView._scene.itemResizing.connect(self.updateRectSize)
 
     def readDataFromDatabase(self):
         global database, imageInfoDf, imageInfoFileName
@@ -145,7 +146,6 @@ class RetinalApplication(QtWidgets.QDialog):
             if not self.currentRectTopLeft.isNull() and not self.currentRectSize.isNull():
                 rect_item = GraphicsRectItem(
                     QtCore.QRectF(self.currentRectTopLeft, self.currentRectSize))
-
                 self.rects.append(rect_item)
                 # if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
                 self.ui.graphicsView._scene.addItem(rect_item)
@@ -295,9 +295,10 @@ class RetinalApplication(QtWidgets.QDialog):
             if (self.isItClick(distance)):
                 self.selectingRectItem(pos)
             else:
+                print('not clicked')
                 boundingBox, index = self.findBoundingBox(self.begin)
                 if boundingBox is not None:
-
+                    print('found it')
                     diffX, diffY = pos.x() - self.begin.x(), pos.y() - self.begin.y()
                     oldRectInfo = self.boundingBoxes[index]
 
@@ -340,6 +341,7 @@ class RetinalApplication(QtWidgets.QDialog):
                     QtGui.QPen(bboxSecondColor))
 
                 self.selectedRect = rect_item
+                print(index)
                 self.openCategoryDialog(
                     boundingBox.rectF.topLeft(), boundingBox.rectF.size(), index)
 
@@ -352,7 +354,6 @@ class RetinalApplication(QtWidgets.QDialog):
         rectF = QtCore.QRectF(
             topLeft, rectSize)
         rect_item = GraphicsRectItem(rectF)
-
         self.ui.graphicsView._scene.addItem(rect_item)
         self.boundingBoxes.append(BoundingBox(rectF))
         self.selectedRect = rect_item
@@ -387,7 +388,7 @@ class RetinalApplication(QtWidgets.QDialog):
             self.ui.dragModeButtton.setText('DrawMode')
         else:
             self.ui.dragModeButtton.setStyleSheet(
-                'background-color: rgba(225,225,225,255); border: 1px solid rgba(250,250,250,255)')
+                'background-color: rgba(225,225,225,255;')
             self.ui.dragModeButtton.setText('DragMode')
 
     def openCategoryDialog(self, beginCord, size, boundingBoxIndex):
@@ -405,6 +406,9 @@ class RetinalApplication(QtWidgets.QDialog):
         else:
             self.categoryDialog.uncheckItems()
 
+    def updateRectSize(self, rectItem):
+        print('please be true')
+
     def updateDatabase(self, idx, newRectBbox):
         newRect = newRectBbox.rectF
 
@@ -416,7 +420,7 @@ class RetinalApplication(QtWidgets.QDialog):
             topLeftRate, rectSizeRate = self.calculateRectSizeRate(
                 newRect.topLeft(), newRect.size())
             bboxId = '-'.join(str(e) for e in topLeftRate + rectSizeRate)
-
+            print('-->', bboxId)
             if '--' in bboxId or topLeftRate[0] > 1 or topLeftRate[1] > 1:
                 print('reverting back')
                 newRectBbox = self.revertBboxChange(newRectBbox, index)
@@ -456,8 +460,8 @@ class RetinalApplication(QtWidgets.QDialog):
             print('No data selected')
             return
 
-        beginPos = cords[0]
-        size = cords[1]
+        beginPos = self.boundingBoxes[index].rectF.topLeft()
+        size = self.boundingBoxes[index].rectF.size()
 
         topLeftRate, rectSizeRate = [round(beginPos.x()/self.xSize, 14), round(beginPos.y()/self.ySize, 14)], [
             round(size.width()/self.xSize, 14), round(size.height()/self.ySize, 14)]
@@ -500,8 +504,10 @@ class RetinalApplication(QtWidgets.QDialog):
 
     def deleteInfo(self, index, cords):
         global database
-        beginPos = cords[0]
-        size = cords[1]
+        print(index)
+
+        beginPos = self.boundingBoxes[index].rectF.topLeft()
+        size = self.boundingBoxes[index].rectF.size()
 
         topLeftRate, rectSizeRate = [round(beginPos.x()/self.xSize, 14), round(beginPos.y()/self.ySize, 14)], [
             round(size.width()/self.xSize, 14), round(size.height()/self.ySize, 14)]
@@ -509,21 +515,24 @@ class RetinalApplication(QtWidgets.QDialog):
         currentPic = self.ui.listWidget.currentItem().text()
 
         bboxId = '-'.join(str(e) for e in topLeftRate + rectSizeRate)
-
+        print('-->', bboxId)
         topLeft, rectSize = [beginPos.x(), beginPos.y()], [
             size.width(), size.height()]
-        boundingBox = self.findRectItem(topLeft, rectSize)
+        boundingBox = self.findBoundingBox(beginPos)
 
         if boundingBox != None:
-            self.rect_items.remove(boundingBox)
+
             del self.boundingBoxes[index]
             # print(len(self.rect_items))
-            self.ui.graphicsView.removeRect(boundingBox)
+            self.ui.graphicsView.removeRect(self.rect_items[index])
+            self.rect_items.remove(self.rect_items[index])
             idx = self.findSelectedBbox(currentPic, bboxId)
 
             if idx[0].size > 0:
                 database = database.drop(idx[0][0])
                 database = database.reset_index(drop=True)
+            if self.isAutoSave():
+                self.saveImageData()
         else:
             print('not founded')
 
@@ -563,6 +572,8 @@ class RetinalApplication(QtWidgets.QDialog):
 
         # TODO: 6. Remove data inside dataframe relevent to this picture
     def deleteAllInfo(self):
+        if self.ui.listWidget.currentItem() is None:
+            return
         deleteDataReleventToImage(self.ui.listWidget.currentItem().text())
         self.deleteImageStatus()
 
