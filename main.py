@@ -48,9 +48,10 @@ class BoundingBox():
     def updateRectPos(self, diffX, diffY):
         self.rectF.translate(diffX, diffY)
 
-    def updateRectSize(self, height, width):
+    def updateRectSize(self, diffX, diffY, width, height):
         self.rectF.setHeight(height)
         self.rectF.setWidth(width)
+        self.updateRectPos(diffX, diffY)
 
     def __eq__(self, other):
         return other is not None and self.stack == other.stack and self.rectF == other.rectF
@@ -286,6 +287,7 @@ class RetinalApplication(QtWidgets.QDialog):
 
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.NoDrag:
             if (self.isItClick(distance)):
+                # TODO: AttributeError: 'NoneType' object has no attribute 'rectF'
                 self.selectingRectItem(pos)
             else:
                 self.createQrectItem(
@@ -293,32 +295,37 @@ class RetinalApplication(QtWidgets.QDialog):
 
         if self.ui.graphicsView.dragMode() == QtWidgets.QGraphicsView.ScrollHandDrag:
             if (self.isItClick(distance)):
+                # TODO: AttributeError: 'NoneType' object has no attribute 'rectF'
                 self.selectingRectItem(pos)
             else:
-                print('not clicked')
-                boundingBox, index = self.findBoundingBox(self.begin)
-                if boundingBox is not None:
-                    print('found it')
-                    diffX, diffY = pos.x() - self.begin.x(), pos.y() - self.begin.y()
-                    oldRectInfo = self.boundingBoxes[index]
+                try:
+                    boundingBox, index = self.findBoundingBox(self.begin)
+                    if boundingBox is not None:
+                        print('found it')
+                        if self.rect_items[index].rectResized == 0:
+                            diffX, diffY = pos.x() - self.begin.x(), pos.y() - self.begin.y()
+                            oldRectInfo = self.boundingBoxes[index]
 
-                    topLeftRate, rectSizeRate = self.calculateRectSizeRate(
-                        oldRectInfo.rectF.topLeft(), oldRectInfo.rectF.size())
+                            topLeftRate, rectSizeRate = self.calculateRectSizeRate(
+                                oldRectInfo.rectF.topLeft(), oldRectInfo.rectF.size())
 
-                    bboxId = '-'.join(str(e)
-                                      for e in topLeftRate + rectSizeRate)
-                    currentPic = self.ui.listWidget.currentItem().text()
+                            bboxId = '-'.join(str(e)
+                                              for e in topLeftRate + rectSizeRate)
+                            currentPic = self.ui.listWidget.currentItem().text()
 
-                    idx = self.findSelectedBbox(currentPic, bboxId)
-                    print(idx)
-                    self.boundingBoxes[index].updateRectPos(
-                        diffX, diffY)
+                            idx = self.findSelectedBbox(currentPic, bboxId)
+                            print(idx)
+                            self.boundingBoxes[index].updateRectPos(
+                                diffX, diffY)
 
-                    # self.rect_items[index].updateRectPos(diffX, diffY)
+                            self.rect_items[index].updateRectPos(diffX, diffY)
 
-                    self.boundingBoxes[index] = self.updateDatabase(
-                        idx, self.boundingBoxes[index])
-                print(self.boundingBoxes, index)
+                            self.boundingBoxes[index] = self.updateDatabase(
+                                idx, self.boundingBoxes[index])
+                    print(self.boundingBoxes, index)
+                except:
+                    print('possibly no bbox for begin coordinates')
+
         # print(self.rect_items)
         self.currentRectTopLeft = QtCore.QPointF()
         self.currentRectSize = QtCore.QSizeF()
@@ -407,7 +414,63 @@ class RetinalApplication(QtWidgets.QDialog):
             self.categoryDialog.uncheckItems()
 
     def updateRectSize(self, rectItem):
-        print('please be true')
+        print(rectItem.rectResized)
+        if rectItem.rectResized:
+            bbox = rectItem._rectF
+            rect = rectItem.rect()
+
+            boundingBox, index = self.findBoundingBox(bbox.topLeft())
+
+            if boundingBox != None:
+                print('found it')
+                oldRectInfo = self.boundingBoxes[index]
+
+                topLeftRate, rectSizeRate = self.calculateRectSizeRate(
+                    oldRectInfo.rectF.topLeft(), oldRectInfo.rectF.size())
+
+                bboxId = '-'.join(str(e)
+                                  for e in topLeftRate + rectSizeRate)
+                currentPic = self.ui.listWidget.currentItem().text()
+
+                idx = self.findSelectedBbox(currentPic, bboxId)
+                print(idx)
+                prevWidth = bbox.size().width()
+                prevHeight = bbox.size().height()
+                newWidth = rect.size().width()
+                newHeight = rect.size().height()
+                diffH = newHeight - prevHeight
+                diffW = newWidth - prevWidth
+                print(bbox.topLeft().x(), bbox.topLeft().y(),
+                      newWidth, newHeight, diffH, diffW, rectItem.rectResized)
+                if rectItem.rectResized == 4:  # handleTopRight
+                    self.boundingBoxes[index].updateRectSize(
+                        0, -diffH, newWidth, newHeight)
+
+                    self.rect_items[index].updateRectSize(
+                        0, -diffH, newWidth, newHeight)
+                elif rectItem.rectResized == 3:  # handleBottomLeft
+                    self.boundingBoxes[index].updateRectSize(
+                        -diffW, 0, newWidth, newHeight)
+
+                    self.rect_items[index].updateRectSize(
+                        -diffW, 0, newWidth, newHeight)
+                elif rectItem.rectResized == 2:
+                    self.boundingBoxes[index].updateRectSize(
+                        -diffW, -diffH, newWidth, newHeight)
+
+                    self.rect_items[index].updateRectSize(
+                        -diffW, -diffH, newWidth, newHeight)
+                else:
+                    self.boundingBoxes[index].updateRectSize(
+                        0, 0, newWidth, newHeight)
+
+                    self.rect_items[index].updateRectSize(
+                        0, 0, newWidth, newHeight)
+
+                self.boundingBoxes[index] = self.updateDatabase(
+                    idx, self.boundingBoxes[index])
+            else:
+                print('not found')
 
     def updateDatabase(self, idx, newRectBbox):
         newRect = newRectBbox.rectF
