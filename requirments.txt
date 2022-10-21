@@ -1,6 +1,5 @@
 PyQt5
 pyqt-tools
-PyQt5Designer
 pandas
 numpy
 pyinstaller

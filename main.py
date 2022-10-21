@@ -3,7 +3,7 @@
 from calendar import c
 from cmath import rect
 from genericpath import getsize
-from turtle import width
+# from turtle import width
 from PyQt5 import QtCore, QtGui, QtWidgets
 import os
 from LabelApplicationUI import Ui_dialog
