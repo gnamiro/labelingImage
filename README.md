@@ -21,7 +21,7 @@ Retinal Image annotator, Designed in NBIC lab, OS based designed by pyQt
 2. `pip install -r requirements.txt`
 3. `python main.py`
 
-App will automatically open with the project components, First prompt windows will ask about the file for saving annotation images.
+App will automatically open with the project components, First prompted window will ask about the file for saving annotation images.
 
 
 #### TODO
