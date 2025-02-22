@@ -1,4 +1,4 @@
-# React Image Annotate
+# Retinal Image Annotate
 
 Retinal Image annotator, Designed in NBIC lab, OS based designed by pyQt
 
